@@ -11,14 +11,14 @@ import ysyx._
 
 class TestHarness()(implicit p: Parameters) extends Module {
   val io = IO(new Bundle { })
-//  val ldut = LazyModule(new ChipLinkSlave)
-  val ldut = LazyModule(new ChipLinkMaster)
+  val ldut = LazyModule(new ysyxSoCASIC)
   val dut = Module(ldut.module)
   dut.dontTouchPorts()
-  dut.slave_mem.foreach(_.tieoff)
-//  dut.slave_mmio.foreach(_.tieoff)
-  dut.master_mmio.foreach(_.tieoff)
-  dut.master_mem.foreach(_(0).tieoff())
+  dut.cpu_mem.foreach(_.tieoff())
+  dut.cpu_mmio.foreach(_.tieoff())
+  dut.cpu_dma.foreach(_.tieoff())
+  dut.spi.foreach(_.tieoff())
+  dut.uart.foreach(_.tieoff())
   dut.fpga_io.b2c := DontCare
 }
 

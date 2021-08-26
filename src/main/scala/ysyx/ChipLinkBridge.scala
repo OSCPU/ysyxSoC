@@ -11,7 +11,6 @@ import freechips.rocketchip.util._
 import freechips.rocketchip.devices.tilelink._
 import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.system._
-import freechips.rocketchip.util.DontTouch
 
 import sifive.blocks.devices.chiplink._
 
