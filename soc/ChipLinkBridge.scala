@@ -194,7 +194,7 @@ trait CanHaveAXI4MasterMMIOPortModuleImpForLinkTop extends LazyModuleImp {
 }
 
 
-class ChipLinkSlave(implicit p: Parameters) extends LinkTopBase
+class ChipLinkMaster(implicit p: Parameters) extends LinkTopBase
   with CanHaveAXI4SlaveMemPortForLinkTop
   with CanHaveAXI4SlaveMMIOPortForLinkTop
   with CanHaveAXI4MasterMemPortForLinkTop
@@ -217,7 +217,7 @@ class ChipLinkSlave(implicit p: Parameters) extends LinkTopBase
 /**
   * Dual top module against Rocketchip over rx/tx channel.
   */
-class ChipLinkMaster(implicit p: Parameters) extends LinkTopBase
+class ChipLinkSlave(implicit p: Parameters) extends LinkTopBase
   with CanHaveAXI4MasterMemPortForLinkTop
   with CanHaveAXI4MasterMMIOPortForLinkTop
   with CanHaveAXI4SlaveMemPortForLinkTop
