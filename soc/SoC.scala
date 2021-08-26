@@ -66,15 +66,15 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
     fpga_io <> chipMaster.module.fpga_io
 
     // connect chiplink mmio interface to crossbar
-    (chipMaster.module.slave_mmio zip chiplink_mmioNode.in) foreach { case (io, (bundle, _)) => io <> bundle }
+    (chipMaster.slave_mmio zip chiplink_mmioNode.in) foreach { case (io, (bundle, _)) => io <> bundle }
 
     // expose chiplink mem interface as ports
-    val chiplink_mem = chipMaster.module.slave_mem
-    val cpu_mem = IO(chiselTypeOf(chiplink_mem))
+    val chiplink_mem = chipMaster.slave_mem(0)
+    val cpu_mem = IO(Flipped(chiselTypeOf(chiplink_mem)))
     chiplink_mem <> cpu_mem
 
     // expose chiplink dma interface as ports
-    val chiplink_dma = chipMaster.module.master_mem.get
+    val chiplink_dma = chipMaster.master_mem(0)
     val cpu_dma = IO(chiselTypeOf(chiplink_dma))
     cpu_dma <> chiplink_dma
 
@@ -95,14 +95,13 @@ class ysyxSoCFull(implicit p: Parameters) extends LazyModule {
 
   override lazy val module = new Impl
   class Impl extends LazyModuleImp(this) with DontTouch {
-    val lfpga = LazyModule(new ysyxSoCFPGA)
-    val fpga = Module(lfpga.module)
+    val fpga = LazyModule(new ysyxSoCFPGA)
+    val mfpga = Module(fpga.module)
 
-    asic.module.fpga_io.b2c <> fpga.fpga_io.c2b
-    fpga.fpga_io.b2c <> asic.module.fpga_io.c2b
+    asic.module.fpga_io.b2c <> mfpga.fpga_io.c2b
+    mfpga.fpga_io.b2c <> asic.module.fpga_io.c2b
 
-    //SimAXIMem.connectMem(lfpga)
-    (fpga.master_mem.get zip lfpga.axi4MasterMemNode.get.in).map { case (io, (_, edge)) =>
+    (fpga.master_mem zip fpga.axi4MasterMemNode.in).map { case (io, (_, edge)) =>
       val mem = LazyModule(new SimAXIMem(edge,
         base = ChipLinkParam.mem.base, size = ChipLinkParam.mem.mask + 1))
       Module(mem.module)
