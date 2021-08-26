@@ -49,14 +49,13 @@ class LinkTopBaseImpl[+L <: LinkTopBase](_outer: L) extends LazyModuleImp(_outer
 
 
 trait CanHaveAXI4MasterMemPortForLinkTop { this: LinkTopBase =>
-  val module: CanHaveAXI4MasterMemPortModuleImpForLinkTop
+  private val portName = "axi4"
+  private val device = new MemoryDevice
+  private val cacheBlockBytes = 64
+  private val idBits = p(ExtMem).map(_.master.idBits).getOrElse(1)
 
-  val axi4MasterMemNode = p(ExtMem).map { case MemoryPortParams(memPortParams, nMemoryChannels) =>
-    val portName = "axi4"
-    val device = new MemoryDevice
-
-    val cacheBlockBytes = 64
-    val axi4MasterMemNode = AXI4SlaveNode(Seq.tabulate(nMemoryChannels) { channel =>
+  val axi4MasterMemNode = AXI4SlaveNode(p(ExtMem).map { case MemoryPortParams(memPortParams, nMemoryChannels) =>
+    Seq.tabulate(nMemoryChannels) { channel =>
       val base = ChipLinkParam.mem
       val filter = AddressSet(channel * cacheBlockBytes, ~((nMemoryChannels-1) * cacheBlockBytes))
 
@@ -70,21 +69,12 @@ trait CanHaveAXI4MasterMemPortForLinkTop { this: LinkTopBase =>
           supportsRead  = TransferSizes(1, cacheBlockBytes),
           interleavedId = Some(0))), // slave does not interleave read responses
         beatBytes = memPortParams.beatBytes)
-    })
+    }
+  }.toList.flatten)
 
-    axi4MasterMemNode := AXI4UserYanker() := AXI4IdIndexer(memPortParams.idBits) := TLToAXI4() := mbus
+  axi4MasterMemNode := AXI4UserYanker() := AXI4IdIndexer(idBits) := TLToAXI4() := mbus
 
-    axi4MasterMemNode
-  }
-}
-
-trait CanHaveAXI4MasterMemPortModuleImpForLinkTop extends LazyModuleImp {
-  val outer: CanHaveAXI4MasterMemPortForLinkTop
-
-  val master_mem = outer.axi4MasterMemNode.map(x => IO(HeterogeneousBag.fromNode(x.in)))
-  (master_mem zip outer.axi4MasterMemNode) foreach { case (io, node) =>
-    (io zip node.in).foreach { case (io, (bundle, _)) => io <> bundle }
-  }
+  val master_mem = InModuleBody { axi4MasterMemNode.makeIOs() }
 }
 
 
@@ -112,13 +102,8 @@ trait CanHaveAXI4SlaveMemPortForLinkTop { this: LinkTopBase =>
       := AXI4IdIndexer(fifoBits)
       := axi4SlaveMemNode)
   }
-}
 
-/** Actually generates the corresponding IO in the concrete Module */
-trait CanHaveAXI4SlaveMemPortModuleImpForLinkTop extends LazyModuleImp {
-  val outer: CanHaveAXI4SlaveMemPortForLinkTop
-  val slave_mem = IO(Flipped(HeterogeneousBag.fromNode(outer.axi4SlaveMemNode.out)))
-  (outer.axi4SlaveMemNode.out zip slave_mem) foreach { case ((bundle, _), io) => bundle <> io }
+  val slave_mem = InModuleBody { axi4SlaveMemNode.makeIOs() }
 }
 
 
@@ -146,13 +131,8 @@ trait CanHaveAXI4SlaveMMIOPortForLinkTop { this: LinkTopBase =>
       := AXI4IdIndexer(fifoBits)
       := axi4SlaveMMIONode)
   }
-}
 
-/** Actually generates the corresponding IO in the concrete Module */
-trait CanHaveAXI4SlaveMMIOPortModuleImpForLinkTop extends LazyModuleImp {
-  val outer: CanHaveAXI4SlaveMMIOPortForLinkTop
-  val slave_mmio = IO(Flipped(HeterogeneousBag.fromNode(outer.axi4SlaveMMIONode.out)))
-  (outer.axi4SlaveMMIONode.out zip slave_mmio) foreach { case ((bundle, _), io) => bundle <> io }
+  val slave_mmio = InModuleBody { axi4SlaveMMIONode.makeIOs() }
 }
 
 
@@ -182,14 +162,8 @@ trait CanHaveAXI4MasterMMIOPortForLinkTop { this: LinkTopBase =>
       := AXI4IdIndexer(params.idBits)
       := TLToAXI4()) := mbus
   }
-}
 
-
-/** Actually generates the corresponding IO in the concrete Module */
-trait CanHaveAXI4MasterMMIOPortModuleImpForLinkTop extends LazyModuleImp {
-  val outer: CanHaveAXI4MasterMMIOPortForLinkTop
-  val master_mmio = IO(HeterogeneousBag.fromNode(outer.axi4MasterMMIONode.in))
-  (master_mmio zip outer.axi4MasterMMIONode.in) foreach { case (io, (bundle, _)) => io <> bundle }
+  val master_mmio = InModuleBody { axi4MasterMMIONode.makeIOs() }
 }
 
 
@@ -205,11 +179,7 @@ class ChipLinkMaster(implicit p: Parameters) extends LinkTopBase
   mbus := TLAtomicAutomata(passthrough=false) := TLFIFOFixer(TLFIFOFixer.all) := TLHintHandler() := TLWidthWidget(4) := chiplink.node
   err.node := TLWidthWidget(8) := mbus
 
-  override lazy val module = new LinkTopBaseImpl(this)
-    with CanHaveAXI4SlaveMemPortModuleImpForLinkTop
-    with CanHaveAXI4SlaveMMIOPortModuleImpForLinkTop
-    with CanHaveAXI4MasterMemPortModuleImpForLinkTop
-    with DontTouch
+  override lazy val module = new LinkTopBaseImpl(this) with DontTouch
 }
 
 
@@ -228,9 +198,5 @@ class ChipLinkSlave(implicit p: Parameters) extends LinkTopBase
   mbus := TLAtomicAutomata(passthrough=false) := TLFIFOFixer(TLFIFOFixer.all) := TLHintHandler() := TLWidthWidget(4) := chiplink.node
   err.node := TLWidthWidget(8) := mbus
 
-  override lazy val module = new LinkTopBaseImpl(this)
-    with CanHaveAXI4MasterMemPortModuleImpForLinkTop
-    with CanHaveAXI4MasterMMIOPortModuleImpForLinkTop
-    with CanHaveAXI4SlaveMemPortModuleImpForLinkTop
-    with DontTouch
+  override lazy val module = new LinkTopBaseImpl(this) with DontTouch
 }
