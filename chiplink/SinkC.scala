@@ -14,8 +14,8 @@ class SinkC(info: ChipLinkInfo) extends Module
 
   // Map TileLink sources to ChipLink sources+domain
   val tl2cl = info.sourceMap
-  val source = info.mux(tl2cl.mapValues(_.source))
-  val domain = info.mux(tl2cl.mapValues(_.domain))
+  val source = info.mux(tl2cl.view.mapValues(_.source).toMap)
+  val domain = info.mux(tl2cl.view.mapValues(_.domain).toMap)
 
   // We need a Q because we stall the channel while serializing it's header
   val c = Queue(io.c, 1, flow=true)

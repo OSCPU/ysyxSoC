@@ -82,7 +82,8 @@ class ChipLink(val params: ChipLinkParams)(implicit p: Parameters) extends LazyM
       TLC  = AddressSet.unify(tlc.flatMap(_.address)))
   }
 
-  lazy val module = new LazyModuleImp(this) {
+  lazy val module = new Impl
+  class Impl extends LazyModuleImp(this) {
     val io = IO(new Bundle {
       val bypass = Bool(OUTPUT)
       // When not syncTX, these drive the TX domain

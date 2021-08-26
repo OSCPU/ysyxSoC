@@ -39,11 +39,11 @@ class RX(info: ChipLinkInfo) extends Module
   val formatOH = UIntToOH(format)
 
   // Create the receiver buffers
-  val hqa = Module(new HellaQueue(info.params.Qdepth)(beat.bits))
-  val hqb = Module(new HellaQueue(info.params.Qdepth)(beat.bits))
-  val hqc = Module(new HellaQueue(info.params.Qdepth)(beat.bits))
-  val hqd = Module(new HellaQueue(info.params.Qdepth)(beat.bits))
-  val hqe = Module(new HellaQueue(info.params.Qdepth)(beat.bits))
+  val hqa = Module(new HellaQueue(info.params.Qdepth)(chisel3.chiselTypeOf(beat.bits)))
+  val hqb = Module(new HellaQueue(info.params.Qdepth)(chisel3.chiselTypeOf(beat.bits)))
+  val hqc = Module(new HellaQueue(info.params.Qdepth)(chisel3.chiselTypeOf(beat.bits)))
+  val hqd = Module(new HellaQueue(info.params.Qdepth)(chisel3.chiselTypeOf(beat.bits)))
+  val hqe = Module(new HellaQueue(info.params.Qdepth)(chisel3.chiselTypeOf(beat.bits)))
 
   // Use these to save some typing; function to prevent renaming
   private def hqX = Seq(hqa, hqb, hqc, hqd, hqe)

@@ -27,7 +27,8 @@ class StuckSnooper(uFn: Seq[TLClientPortParameters] => TLClientPortParameters)(i
 {
   val node = new StuckSnooperNode(uFn)
 
-  lazy val module = new LazyModuleImp(this) {
+  lazy val module = new Impl
+  class Impl extends LazyModuleImp(this) {
     val io = IO(new Bundle {
       val bypass = Bool(INPUT)
       val pending = Bool(OUTPUT)
@@ -112,7 +113,8 @@ class TLStuckSnooperTester(txns: Int)(implicit p: Parameters) extends LazyModule
   ram.node := TLFragmenter(4, 16) := mux.node
   // how to test probe + release?
 
-  lazy val module = new LazyModuleImp(this) with UnitTestModule {
+  lazy val module = new Impl
+  class Impl extends LazyModuleImp(this) with UnitTestModule {
     io.finished := fuzz1.module.io.finished && fuzz2.module.io.finished
     mux.module.io.bypass := LFSR64(Bool(true))(0)
   }
