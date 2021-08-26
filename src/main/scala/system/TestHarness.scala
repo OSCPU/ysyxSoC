@@ -7,8 +7,22 @@ import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.devices.debug.Debug
 import freechips.rocketchip.diplomacy.LazyModule
 import freechips.rocketchip.util.AsyncResetReg
+import ysyx._
 
 class TestHarness()(implicit p: Parameters) extends Module {
+  val io = IO(new Bundle { })
+//  val ldut = LazyModule(new ChipLinkSlave)
+  val ldut = LazyModule(new ChipLinkMaster)
+  val dut = Module(ldut.module)
+  dut.dontTouchPorts()
+  dut.slave_mem.foreach(_.tieoff)
+//  dut.slave_mmio.foreach(_.tieoff)
+  dut.master_mmio.foreach(_.tieoff)
+  dut.master_mem.foreach(_(0).tieoff())
+  dut.fpga_io.b2c := DontCare
+}
+
+class TestHarness2()(implicit p: Parameters) extends Module {
   val io = IO(new Bundle {
     val success = Output(Bool())
   })
