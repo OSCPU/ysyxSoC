@@ -1,3 +1,22 @@
+diff --git a/src/main/scala/amba/axi4/Parameters.scala b/src/main/scala/amba/axi4/Parameters.scala
+index fa1ddd85..692dcc5e 100644
+--- a/src/main/scala/amba/axi4/Parameters.scala
++++ b/src/main/scala/amba/axi4/Parameters.scala
+@@ -121,10 +121,10 @@ case class AXI4BundleParameters(
+   val lenBits   = AXI4Parameters.lenBits
+   val sizeBits  = AXI4Parameters.sizeBits
+   val burstBits = AXI4Parameters.burstBits
+-  val lockBits  = AXI4Parameters.lockBits
+-  val cacheBits = AXI4Parameters.cacheBits
+-  val protBits  = AXI4Parameters.protBits
+-  val qosBits   = AXI4Parameters.qosBits
++  val lockBits  = 0 //AXI4Parameters.lockBits
++  val cacheBits = 0 //AXI4Parameters.cacheBits
++  val protBits  = 0 //AXI4Parameters.protBits
++  val qosBits   = 0 //AXI4Parameters.qosBits
+   val respBits  = AXI4Parameters.respBits
+ 
+   def union(x: AXI4BundleParameters) =
 diff --git a/src/main/scala/system/TestHarness.scala b/src/main/scala/system/TestHarness.scala
 index bf29c6d9..8f78a5ac 100644
 --- a/src/main/scala/system/TestHarness.scala
