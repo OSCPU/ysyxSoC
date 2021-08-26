@@ -30,7 +30,15 @@ sim_csrcs = \
 # Build Verilog
 #--------------------------------------------------------------------
 
+final_verilog = $(generated_dir)/$(long_name).final.v
+final_vsrc_list = $(generated_dir)/$(long_name).v \
+                  $(generated_dir)/$(long_name).behav_srams.v \
+                  $(vsrc)/plusarg_reader.v \
+                  $(vsrc)/EICG_wrapper.v
+
 verilog: $(sim_vsrcs)
+	cat $(final_vsrc_list) > $(final_verilog)
+	sed -i -e 's/_\(aw\|ar\|w\|r\|b\)_\(\|bits_\)/_\1/g' $(final_verilog)
 
 .PHONY: verilog
 
