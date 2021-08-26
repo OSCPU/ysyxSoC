@@ -113,10 +113,10 @@ case class AXI4BundleParameters(
   val lenBits   = AXI4Parameters.lenBits
   val sizeBits  = AXI4Parameters.sizeBits
   val burstBits = AXI4Parameters.burstBits
-  val lockBits  = AXI4Parameters.lockBits
-  val cacheBits = AXI4Parameters.cacheBits
-  val protBits  = AXI4Parameters.protBits
-  val qosBits   = AXI4Parameters.qosBits
+  val lockBits  = 0 //AXI4Parameters.lockBits
+  val cacheBits = 0 //AXI4Parameters.cacheBits
+  val protBits  = 0 //AXI4Parameters.protBits
+  val qosBits   = 0 //AXI4Parameters.qosBits
   val respBits  = AXI4Parameters.respBits
 
   def union(x: AXI4BundleParameters) =
