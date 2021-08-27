@@ -22,8 +22,8 @@ case class ChipLinkParams(TLUH: Seq[AddressSet], TLC: Seq[AddressSet], sourceBit
   val clSourceBits = 16
   val clSinkBits = 16
   val crossing = AsyncQueueParams()
-  val Qdepth = 8192 / dataBytes
-  val maxXfer = 4096
+  val Qdepth = 128 / dataBytes
+  val maxXfer = 64
   val xferBits = log2Ceil(maxXfer)
   val creditBits = 20 // use saturating addition => we can exploit at most 1MB of buffers
   val addressBits = 64
