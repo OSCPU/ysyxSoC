@@ -10,9 +10,8 @@ class TestHarness()(implicit p: Parameters) extends Module {
   val ldut = LazyModule(new ysyxSoCFull)
   val dut = Module(ldut.module)
   dut.dontTouchPorts()
-  dut.cpu_mem := DontCare
-  dut.cpu_mmio.foreach(_ := DontCare)
-  dut.cpu_dma := DontCare
+  dut.cpu_master := DontCare
+  dut.cpu_slave := DontCare
   dut.spi.foreach(_ := DontCare)
   dut.uart.foreach(_ := DontCare)
 }

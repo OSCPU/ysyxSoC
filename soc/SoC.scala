@@ -32,13 +32,7 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
   val chipMaster = LazyModule(new ChipLinkMaster)
   val xbar = AXI4Xbar()
 
-  val cpuMemMaster = AXI4MasterNode(slavePortParamsOpt.map(params =>
-    AXI4MasterPortParameters(
-      masters = Seq(AXI4MasterParameters(
-        name = "cpu",
-        id   = IdRange(0, 1 << idBits))))).toSeq)
-
-  val cpuMMIOMaster = AXI4MasterNode(slavePortParamsOpt.map(params =>
+  val cpuMasterNode = AXI4MasterNode(slavePortParamsOpt.map(params =>
     AXI4MasterPortParameters(
       masters = Seq(AXI4MasterParameters(
         name = "cpu",
@@ -48,10 +42,6 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
     AXI4SlavePortParametersGenerator(params,
       ChipLinkParam.mmio.base, ChipLinkParam.mmio.mask + 1 + ChipLinkParam.mem.mask + 1)).toSeq)
 
-//  val chiplink_memNode = AXI4SlaveNode(memPortParamsOpt.map { case MemoryPortParams(params, _) =>
-//    AXI4SlavePortParametersGenerator(params,
-//    ChipLinkParam.mem.base, ChipLinkParam.mem.mask + 1)).toSeq)
-
   val spiNode = AXI4SlaveNode(mmioPortParamsOpt.map(params =>
     AXI4SlavePortParametersGenerator(params, 0x10000000, 0x10001000)).toSeq)
 
@@ -59,16 +49,13 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
     AXI4SlavePortParametersGenerator(params, 0x20001000, 0x1000)).toSeq)
 
   List(chiplinkNode, spiNode, uartNode).map(_ := xbar)
-  xbar := cpuMMIOMaster
-  xbar := cpuMemMaster
+  xbar := cpuMasterNode
 
   override lazy val module = new Impl
   class Impl extends LazyModuleImp(this) with DontTouch {
     // expose cpu master interface as ports
-    val cpu_mem  = IO(Flipped(HeterogeneousBag.fromNode(cpuMemMaster.out)))
-    val cpu_mmio = IO(Flipped(HeterogeneousBag.fromNode(cpuMMIOMaster.out)))
-    (cpuMemMaster.out  zip cpu_mem ) foreach { case ((bundle, _), io) => bundle <> io }
-    (cpuMMIOMaster.out zip cpu_mmio) foreach { case ((bundle, _), io) => bundle <> io }
+    val cpu_master  = IO(Flipped(HeterogeneousBag.fromNode(cpuMasterNode.out)))
+    (cpuMasterNode.out  zip cpu_master ) foreach { case ((bundle, _), io) => bundle <> io }
 
     // expose chiplink fpga I/O interface as ports
     val fpga_io = IO(chiselTypeOf(chipMaster.module.fpga_io))
@@ -79,8 +66,8 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
 
     // expose chiplink dma interface as ports
     val chiplink_dma = chipMaster.master_mem(0)
-    val cpu_dma = IO(chiselTypeOf(chiplink_dma))
-    cpu_dma <> chiplink_dma
+    val cpu_slave = IO(chiselTypeOf(chiplink_dma))
+    cpu_slave <> chiplink_dma
 
     // expose spi and uart slave interface as ports
     val spi = IO(HeterogeneousBag.fromNode(spiNode.in))
@@ -101,9 +88,10 @@ class ysyxSoCFull(implicit p: Parameters) extends LazyModule {
   class Impl extends LazyModuleImp(this) with DontTouch {
     val fpga = LazyModule(new ysyxSoCFPGA)
     val mfpga = Module(fpga.module)
+    val masic = asic.module
 
-    asic.module.fpga_io.b2c <> mfpga.fpga_io.c2b
-    mfpga.fpga_io.b2c <> asic.module.fpga_io.c2b
+    masic.fpga_io.b2c <> mfpga.fpga_io.c2b
+    mfpga.fpga_io.b2c <> masic.fpga_io.c2b
 
     (fpga.master_mem zip fpga.axi4MasterMemNode.in).map { case (io, (_, edge)) =>
       val mem = LazyModule(new SimAXIMem(edge,
@@ -115,17 +103,14 @@ class ysyxSoCFull(implicit p: Parameters) extends LazyModule {
     fpga.master_mmio.map(_ := DontCare)
     fpga.slave.map(_ := DontCare)
 
-    val cpu_mem  = IO(chiselTypeOf(asic.module.cpu_mem))
-    val cpu_mmio = IO(chiselTypeOf(asic.module.cpu_mmio))
-    val cpu_dma  = IO(chiselTypeOf(asic.module.cpu_dma))
-//    soc.module.cpu_master <> cpu_master
-    asic.module.cpu_mem <> cpu_mem
-    asic.module.cpu_mmio <> cpu_mmio
-    cpu_dma <> asic.module.cpu_dma
+    val cpu_master = IO(chiselTypeOf(masic.cpu_master))
+    val cpu_slave  = IO(chiselTypeOf(masic.cpu_slave))
+    masic.cpu_master <> cpu_master
+    cpu_slave <> masic.cpu_slave
 
-    val spi  = IO(chiselTypeOf(asic.module.spi))
-    val uart = IO(chiselTypeOf(asic.module.uart))
-    spi  <> asic.module.spi
-    uart <> asic.module.uart
+    val spi  = IO(chiselTypeOf(masic.spi))
+    val uart = IO(chiselTypeOf(masic.uart))
+    spi  <> masic.spi
+    uart <> masic.uart
   }
 }
