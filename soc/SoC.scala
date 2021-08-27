@@ -32,15 +32,21 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
   val chipMaster = LazyModule(new ChipLinkMaster)
   val xbar = AXI4Xbar()
 
-  val cpuMMIOMaster = AXI4MasterNode( slavePortParamsOpt.map(params =>
+  val cpuMemMaster = AXI4MasterNode(slavePortParamsOpt.map(params =>
     AXI4MasterPortParameters(
       masters = Seq(AXI4MasterParameters(
         name = "cpu",
         id   = IdRange(0, 1 << idBits))))).toSeq)
 
-  val chiplink_mmioNode = AXI4SlaveNode(mmioPortParamsOpt.map(params =>
+  val cpuMMIOMaster = AXI4MasterNode(slavePortParamsOpt.map(params =>
+    AXI4MasterPortParameters(
+      masters = Seq(AXI4MasterParameters(
+        name = "cpu",
+        id   = IdRange(0, 1 << idBits))))).toSeq)
+
+  val chiplinkNode = AXI4SlaveNode(mmioPortParamsOpt.map(params =>
     AXI4SlavePortParametersGenerator(params,
-      ChipLinkParam.mmio.base, ChipLinkParam.mmio.mask + 1)).toSeq)
+      ChipLinkParam.mmio.base, ChipLinkParam.mmio.mask + 1 + ChipLinkParam.mem.mask + 1)).toSeq)
 
 //  val chiplink_memNode = AXI4SlaveNode(memPortParamsOpt.map { case MemoryPortParams(params, _) =>
 //    AXI4SlavePortParametersGenerator(params,
@@ -52,26 +58,24 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
   val uartNode = AXI4SlaveNode(mmioPortParamsOpt.map(params =>
     AXI4SlavePortParametersGenerator(params, 0x20001000, 0x1000)).toSeq)
 
-  List(chiplink_mmioNode, spiNode, uartNode).map(_ := xbar)
+  List(chiplinkNode, spiNode, uartNode).map(_ := xbar)
   xbar := cpuMMIOMaster
+  xbar := cpuMemMaster
 
   override lazy val module = new Impl
   class Impl extends LazyModuleImp(this) with DontTouch {
     // expose cpu master interface as ports
+    val cpu_mem  = IO(Flipped(HeterogeneousBag.fromNode(cpuMemMaster.out)))
     val cpu_mmio = IO(Flipped(HeterogeneousBag.fromNode(cpuMMIOMaster.out)))
+    (cpuMemMaster.out  zip cpu_mem ) foreach { case ((bundle, _), io) => bundle <> io }
     (cpuMMIOMaster.out zip cpu_mmio) foreach { case ((bundle, _), io) => bundle <> io }
 
     // expose chiplink fpga I/O interface as ports
     val fpga_io = IO(chiselTypeOf(chipMaster.module.fpga_io))
     fpga_io <> chipMaster.module.fpga_io
 
-    // connect chiplink mmio interface to crossbar
-    (chipMaster.slave_mmio zip chiplink_mmioNode.in) foreach { case (io, (bundle, _)) => io <> bundle }
-
-    // expose chiplink mem interface as ports
-    val chiplink_mem = chipMaster.slave_mem(0)
-    val cpu_mem = IO(Flipped(chiselTypeOf(chiplink_mem)))
-    chiplink_mem <> cpu_mem
+    // connect chiplink slave interface to crossbar
+    (chipMaster.slave zip chiplinkNode.in) foreach { case (io, (bundle, _)) => io <> bundle }
 
     // expose chiplink dma interface as ports
     val chiplink_dma = chipMaster.master_mem(0)
@@ -109,7 +113,7 @@ class ysyxSoCFull(implicit p: Parameters) extends LazyModule {
     }
 
     fpga.master_mmio.map(_ := DontCare)
-    fpga.slave_mem.map(_ := DontCare)
+    fpga.slave.map(_ := DontCare)
 
     val cpu_mem  = IO(chiselTypeOf(asic.module.cpu_mem))
     val cpu_mmio = IO(chiselTypeOf(asic.module.cpu_mmio))

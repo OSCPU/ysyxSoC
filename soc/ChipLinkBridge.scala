@@ -79,7 +79,7 @@ trait CanHaveAXI4MasterMemPortForLinkTop { this: LinkTopBase =>
 
 
 /** Adds an AXI4 port to the system intended to be a slave on an MMIO device bus */
-trait CanHaveAXI4SlaveMemPortForLinkTop { this: LinkTopBase =>
+trait CanHaveAXI4SlavePortForLinkTop { this: LinkTopBase =>
   implicit val p: Parameters
 
   private val slavePortParamsOpt = p(ExtIn)
@@ -87,7 +87,7 @@ trait CanHaveAXI4SlaveMemPortForLinkTop { this: LinkTopBase =>
   private val fifoBits = 1
 
   private val idBits = 4
-  val axi4SlaveMemNode = AXI4MasterNode(
+  val axi4SlaveNode = AXI4MasterNode(
     slavePortParamsOpt.map(params =>
       AXI4MasterPortParameters(
         masters = Seq(AXI4MasterParameters(
@@ -100,39 +100,10 @@ trait CanHaveAXI4SlaveMemPortForLinkTop { this: LinkTopBase =>
       := AXI4UserYanker(Some(1 << (params.sourceBits - fifoBits - 1)))
       := AXI4Fragmenter()
       := AXI4IdIndexer(fifoBits)
-      := axi4SlaveMemNode)
+      := axi4SlaveNode)
   }
 
-  val slave_mem = InModuleBody { axi4SlaveMemNode.makeIOs() }
-}
-
-
-/** Adds an AXI4 port to the system intended to be a slave on an MMIO device bus */
-trait CanHaveAXI4SlaveMMIOPortForLinkTop { this: LinkTopBase =>
-  implicit val p: Parameters
-
-  private val slavePortParamsOpt = p(ExtIn)
-  private val portName = "slave_port_axi4_mmio"
-  private val fifoBits = 1
-
-  val idBits = 4
-  val axi4SlaveMMIONode = AXI4MasterNode(
-    slavePortParamsOpt.map(params =>
-      AXI4MasterPortParameters(
-        masters = Seq(AXI4MasterParameters(
-          name = portName.kebab,
-          id   = IdRange(0, 1 << idBits))))).toSeq)
-
-  slavePortParamsOpt.map { params =>
-    fxbar := TLFIFOFixer(TLFIFOFixer.all) := (TLWidthWidget(params.beatBytes)
-      := AXI4ToTL()
-      := AXI4UserYanker(Some(1 << (params.sourceBits - fifoBits - 1)))
-      := AXI4Fragmenter()
-      := AXI4IdIndexer(fifoBits)
-      := axi4SlaveMMIONode)
-  }
-
-  val slave_mmio = InModuleBody { axi4SlaveMMIONode.makeIOs() }
+  val slave = InModuleBody { axi4SlaveNode.makeIOs() }
 }
 
 
@@ -168,8 +139,7 @@ trait CanHaveAXI4MasterMMIOPortForLinkTop { this: LinkTopBase =>
 
 
 class ChipLinkMaster(implicit p: Parameters) extends LinkTopBase
-  with CanHaveAXI4SlaveMemPortForLinkTop
-  with CanHaveAXI4SlaveMMIOPortForLinkTop
+  with CanHaveAXI4SlavePortForLinkTop
   with CanHaveAXI4MasterMemPortForLinkTop
 {
   // Dummy manager network
@@ -189,7 +159,7 @@ class ChipLinkMaster(implicit p: Parameters) extends LinkTopBase
 class ChipLinkSlave(implicit p: Parameters) extends LinkTopBase
   with CanHaveAXI4MasterMemPortForLinkTop
   with CanHaveAXI4MasterMMIOPortForLinkTop
-  with CanHaveAXI4SlaveMemPortForLinkTop
+  with CanHaveAXI4SlavePortForLinkTop
 {
   // Dummy manager network
   val err = LazyModule(new TLError(DevNullParams(Seq(AddressSet(0x1000L, 0x1000L - 1)), 64, 64, region = RegionType.TRACKED)))
