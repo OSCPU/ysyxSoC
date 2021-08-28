@@ -11,50 +11,49 @@ import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.amba.apb._
 import freechips.rocketchip.system.SimAXIMem
 
-object AXI4SlavePortParametersGenerator {
-  def apply(params: MasterPortParams, base: BigInt, size: BigInt) =
-    AXI4SlavePortParameters(
-      slaves = Seq(AXI4SlaveParameters(
-        address       = AddressSet.misaligned(base, size),
-        executable    = params.executable,
-        supportsWrite = TransferSizes(1, params.maxXferBytes),
-        supportsRead  = TransferSizes(1, params.maxXferBytes))),
-      beatBytes = params.beatBytes)
+object AXI4SlaveNodeGenerator {
+  def apply(params: Option[MasterPortParams], base: BigInt, size: BigInt)(implicit valName: ValName) =
+    AXI4SlaveNode(params.map(p => AXI4SlavePortParameters(
+        slaves = Seq(AXI4SlaveParameters(
+          address       = AddressSet.misaligned(base, size),
+          executable    = p.executable,
+          supportsWrite = TransferSizes(1, p.maxXferBytes),
+          supportsRead  = TransferSizes(1, p.maxXferBytes))),
+        beatBytes = p.beatBytes
+      )).toSeq)
+}
+
+object APBSlaveNodeGenerator {
+  def apply(params: Option[MasterPortParams], base: BigInt, size: BigInt)(implicit valName: ValName) =
+    APBSlaveNode(params.map(p => APBSlavePortParameters(
+      slaves = Seq(APBSlaveParameters(
+        address    = AddressSet.misaligned(base, size),
+        executable = p.executable
+      )),
+      beatBytes = 4
+    )).toSeq)
 }
 
 // split cpu mem and mmio
 class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
-  private val slavePortParamsOpt = p(ExtIn)
-  private val mmioPortParamsOpt = p(ExtBus)
-  private val memPortParamsOpt = p(ExtMem)
-  private val device = new SimpleBus("axi4".kebab, Nil)
   val idBits = 4
 
   val chipMaster = LazyModule(new ChipLinkMaster)
   val xbar = AXI4Xbar()
 
-  val cpuMasterNode = AXI4MasterNode(slavePortParamsOpt.map(params =>
+  val cpuMasterNode = AXI4MasterNode(p(ExtIn).map(params =>
     AXI4MasterPortParameters(
       masters = Seq(AXI4MasterParameters(
         name = "cpu",
         id   = IdRange(0, 1 << idBits))))).toSeq)
 
-  val chiplinkNode = AXI4SlaveNode(mmioPortParamsOpt.map(params =>
-    AXI4SlavePortParametersGenerator(params,
-      ChipLinkParam.mmio.base, ChipLinkParam.mmio.mask + 1 + ChipLinkParam.mem.mask + 1)).toSeq)
+  val chiplinkNode = AXI4SlaveNodeGenerator(p(ExtBus),
+      ChipLinkParam.mmio.base, ChipLinkParam.mmio.mask + 1 + ChipLinkParam.mem.mask + 1)
 
-  val spiNode = APBSlaveNode(mmioPortParamsOpt.map(params =>
-    APBSlavePortParameters(
-      slaves = Seq(APBSlaveParameters(
-        address       = AddressSet.misaligned(0x10000000, 0x10001000),
-        executable    = params.executable
-      )),
-      beatBytes = 4)).toSeq)
+  val spiNode  = APBSlaveNodeGenerator(p(ExtBus), 0x10000000, 0x10001000)
+  val uartNode = APBSlaveNodeGenerator(p(ExtBus), 0x20001000, 0x1000)
 
-  val uartNode = AXI4SlaveNode(mmioPortParamsOpt.map(params =>
-    AXI4SlavePortParametersGenerator(params, 0x20001000, 0x1000)).toSeq)
-
-  List(chiplinkNode, spiNode := AXI4ToAPB(), uartNode).map(_ := xbar)
+  List(chiplinkNode, spiNode := AXI4ToAPB(), uartNode := AXI4ToAPB()).map(_ := xbar)
   xbar := cpuMasterNode
 
   override lazy val module = new Impl
