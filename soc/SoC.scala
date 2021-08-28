@@ -8,6 +8,7 @@ import freechips.rocketchip.config.{Field, Parameters}
 import freechips.rocketchip.subsystem._
 import freechips.rocketchip.util._
 import freechips.rocketchip.amba.axi4._
+import freechips.rocketchip.amba.apb._
 import freechips.rocketchip.system.SimAXIMem
 
 object AXI4SlavePortParametersGenerator {
@@ -42,13 +43,18 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
     AXI4SlavePortParametersGenerator(params,
       ChipLinkParam.mmio.base, ChipLinkParam.mmio.mask + 1 + ChipLinkParam.mem.mask + 1)).toSeq)
 
-  val spiNode = AXI4SlaveNode(mmioPortParamsOpt.map(params =>
-    AXI4SlavePortParametersGenerator(params, 0x10000000, 0x10001000)).toSeq)
+  val spiNode = APBSlaveNode(mmioPortParamsOpt.map(params =>
+    APBSlavePortParameters(
+      slaves = Seq(APBSlaveParameters(
+        address       = AddressSet.misaligned(0x10000000, 0x10001000),
+        executable    = params.executable
+      )),
+      beatBytes = 4)).toSeq)
 
   val uartNode = AXI4SlaveNode(mmioPortParamsOpt.map(params =>
     AXI4SlavePortParametersGenerator(params, 0x20001000, 0x1000)).toSeq)
 
-  List(chiplinkNode, spiNode, uartNode).map(_ := xbar)
+  List(chiplinkNode, spiNode := AXI4ToAPB(), uartNode).map(_ := xbar)
   xbar := cpuMasterNode
 
   override lazy val module = new Impl
