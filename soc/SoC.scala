@@ -40,6 +40,7 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
 
   val chipMaster = LazyModule(new ChipLinkMaster)
   val xbar = AXI4Xbar()
+  val apbxbar = LazyModule(new APBFanout).node
 
   val cpuMasterNode = AXI4MasterNode(p(ExtIn).map(params =>
     AXI4MasterPortParameters(
@@ -53,7 +54,8 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
   val spiNode  = APBSlaveNodeGenerator(p(ExtBus), 0x10000000, 0x10001000)
   val uartNode = APBSlaveNodeGenerator(p(ExtBus), 0x20001000, 0x1000)
 
-  List(chiplinkNode, spiNode := AXI4ToAPB(), uartNode := AXI4ToAPB()).map(_ := xbar)
+  List(spiNode, uartNode).map(_ := apbxbar)
+  List(chiplinkNode, apbxbar := AXI4ToAPB()).map(_ := xbar)
   xbar := cpuMasterNode
 
   override lazy val module = new Impl
