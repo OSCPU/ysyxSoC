@@ -52,6 +52,11 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
   xbar := cpuMasterNode
 
   override lazy val module = new LazyModuleImp(this) with DontTouch {
+    // generate delayed reset for cpu, since chiplink should finish reset
+    // to initialize some async modules before accept any requests from cpu
+    val cpu_reset = IO(Flipped(chiselTypeOf(reset)))
+    cpu_reset := SynchronizerShiftReg(reset.asBool, 10)
+
     // expose cpu master interface as ports
     val cpu_master  = IO(Flipped(HeterogeneousBag.fromNode(cpuMasterNode.out)))
     (cpuMasterNode.out  zip cpu_master ) foreach { case ((bundle, _), io) => bundle <> io }
@@ -101,8 +106,10 @@ class ysyxSoCFull(implicit p: Parameters) extends LazyModule {
     fpga.master_mmio.map(_.tieoff())
     fpga.slave.map(_.tieoff())
 
+    val cpu_reset  = IO(chiselTypeOf(masic.cpu_reset))
     val cpu_master = IO(chiselTypeOf(masic.cpu_master))
     val cpu_slave  = IO(chiselTypeOf(masic.cpu_slave))
+    cpu_reset := masic.cpu_reset
     masic.cpu_master <> cpu_master
     cpu_slave <> masic.cpu_slave
 
