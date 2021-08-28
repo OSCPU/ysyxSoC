@@ -61,7 +61,7 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
     // generate delayed reset for cpu, since chiplink should finish reset
     // to initialize some async modules before accept any requests from cpu
     val cpu_reset = IO(Flipped(chiselTypeOf(reset)))
-    cpu_reset := SynchronizerShiftReg(reset.asBool, 10)
+    cpu_reset := SynchronizerShiftReg(reset.asBool, 10) || reset.asBool
 
     // expose cpu master interface as ports
     val cpu_master  = IO(Flipped(HeterogeneousBag.fromNode(cpuMasterNode.out)))
