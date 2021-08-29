@@ -1,3 +1,121 @@
+[一生一芯计划](https://oscpu.github.io/ysyx/)仿真用SoC工程
+=====================
+
+本工程按照一生一芯计划的SoC流片规范实现了一个仿真用的SoC,
+可在verilator中进行仿真, 用于在缺少商业EDA仿真环境的情况下,
+对处理器开展与流片仿真环境尽可能接近的验证工作.
+
+## 使用方法
+
+1. 通过以下命令克隆本项目
+   ```
+   git clone --depth 1 https://github.com/OSCPU/ysyxSoC.git
+   ```
+1. 将`ysyxSoC/src/main/resources/ysyx-peripheral`目录及其子目录下的所有`.v`文件加入verilator的Verilog文件列表
+1. 将`ysyxSoC/src/main/resources/ysyx-peripheral/spiFlash/spiFlash.cpp`文件加入verilator的C++文件列表
+1. 实例化`ysyxSoCFull`模块(在`ysyxSoC/src/main/resources/ysyx-peripheral/ysyxSoCFull.v`中定义),
+   并对该模块的以下端口进行连接:
+   * 输入正确的`clock`和`reset`
+   * 将`cpu_reset`连接到处理器的复位端
+   * 将`cpu_master_0_xxx`总线连接到处理器的AXI master接口
+   * 将`cpu_slave_xxx`总线连接到处理器的AXI slave接口
+   * 将`uart_rx`连接逻辑`1`, `uart_tx`可悬空
+   * 将`cpu_intr`连接到处理器的外部中断入口
+1. 将处理器的复位PC设置为`0x3000_0000`
+1. 在verilator编译选项中添加`--timescale "1ns/1ns"`
+1. 在verilator初始化时调用`spiFlash.cpp`中的`flash_init(img)`函数,
+   其中参数`img`是bin文件的路径, 用于将bin文件中的指令序列放置在flash中
+1. 通过verilator进行仿真即可
+
+## 模块说明
+
+* AXI4 crossbar (来源于Rocket Chip项目, 已在计算所团队的项目中经过流片验证)
+* ChipLink (来源于[sifive-blocks](https://github.com/sifive/sifive-blocks/tree/master/src/main/scala/devices/chiplink), 已在计算所团队的项目中经过流片验证)
+* UART16550 (来源于OpenCores, 已在计算所团队的项目中经过流片验证)
+* SPI控制器 (来源于OpenCores, 已在计算所团队的项目中经过流片验证)
+* SoC集成 (基于diplomacy DSL实现)
+
+## 相关文件介绍
+
+### Verilog相关文件
+
+```
+ysyxSoC/src/main/resources/ysyx-peripheral
+├── Makefile                       # 用于将Chisel代码编译成ysyxSoCFull.v, 用户无需使用
+├── spi                            # SPI控制器
+│   ├── doc
+│   │   └── spi.pdf                # 文档
+│   └── rtl
+│       ├── spi_clgen.v
+│       ├── spi_defines.v
+│       ├── spi_shift.v
+│       ├── spi_top.v
+│       └── spi.v                  # 顶层文件(包含flash的XIP模式)
+├── spiFlash                       # 支持SPI模式的Flash颗粒简化模型
+│   ├── spiFlash.cpp
+│   └── spiFlash.v
+├── uart16550                      # UART16550控制器
+│   ├── doc
+│   │   └── UART_spec.pdf          # 文档
+│   └── rtl
+│       ├── raminfr.v
+│       ├── timescale.v
+│       ├── uart_apb.v             # 顶层文件(包含flash的XIP模式)
+│       ├── uart_defines.v
+│       ├── uart_receiver.v
+│       ├── uart_regs.v
+│       ├── uart_rfifo.v
+│       ├── uart_sync_flops.v
+│       ├── uart_tfifo.v
+│       └── uart_transmitter.v
+└── ysyxSoCFull.v                  # SoC的实现
+```
+
+### chisel相关文件
+
+```
+ysyxSoC/src/main/scala/ysyx
+├── chiplink
+│   └── ...                        # ChipLink的实现
+└── ysyx
+    ├── AXI4ToAPB.scala            # AXI4-APB的转接桥, 不支持burst, 且只支持4字节以下的访问
+    ├── ChipLinkBridge.scala       # ChipLink-AXI4的转接桥
+    ├── SoC.scala                  # SoC顶层
+    ├── SPI.scala                  # SPI wrapper, 将会实例化verilog版本的SPI控制器
+    └── Uart16550.scala            # UART16550 wrapper, 将会实例化verilog版本的UART16550控制器
+```
+
+## 地址空间分配
+
+| 设备 | 地址空间 |
+| --- | --- |
+| reserve           | `0x0000_0000~0x01ff_ffff`|
+| CLINT             | `0x0200_0000~0x0200_ffff`|
+| reserve           | `0x0201_0000~0x0fff_ffff`|
+| UART16550         | `0x1000_0000~0x1000_0fff`|
+| SPI控制器         | `0x1000_1000~0x1000_1fff`|
+| reserve           | `0x0100_2000~0x2fff_ffff`|
+| SPI-flash XIP模式 | `0x3000_0000~0x3fff_ffff`|
+| ChipLink MMIO     | `0x4000_0000~0x7fff_ffff`|
+| memory            | `0x8000_0000~0xffff_ffff`|
+
+其中:
+* 处理器的复位PC需设置为`0x3000_0000`, 第一条指令从flash中取出
+* CLINT模块位于处理器内部, SoC不提供, 需要大家自行实现
+* 若需要接入其它设备(如PLIC), 请在处理器内部接入,
+  并将地址分配预留空间中, 避免与SoC的设备地址产生冲突
+
+## 注意事项
+
+**本项目中的SoC只用于在verilator中验证, 不参与流片环节!
+此外本项目与流片SoC环境仍然有少数不同, 
+在本项目中通过测试, 不代表也能通过流片SoC环境的测试.**
+具体地, 两者的不同之处包括:
+* 没有跨时钟域和异步桥
+* 没有PLL
+
+## 以下为Rocket Chip项目的README内容
+
 Rocket Chip Generator :rocket: [![Build Status](https://travis-ci.org/chipsalliance/rocket-chip.svg?branch=master)](https://travis-ci.org/chipsalliance/rocket-chip)
 =====================
 
