@@ -12,6 +12,7 @@
    git clone --depth 1 https://github.com/OSCPU/ysyxSoC.git
    ```
 1. 将`ysyxSoC/src/main/resources/ysyx-peripheral`目录及其子目录下的所有`.v`文件加入verilator的Verilog文件列表
+1. 将`ysyxSoC/src/main/resources/ysyx-peripheral/uart16550/rtl`和`ysyxSoC/src/main/resources/ysyx-peripheral/spi/rtl`两个目录加入包含路径中
 1. 将`ysyxSoC/src/main/resources/ysyx-peripheral/spiFlash/spiFlash.cpp`文件加入verilator的C++文件列表
 1. 实例化`ysyxSoCFull`模块(在`ysyxSoC/src/main/resources/ysyx-peripheral/ysyxSoCFull.v`中定义),
    并对该模块的以下端口进行连接:
@@ -46,6 +47,7 @@ ysyxSoC/src/main/resources/ysyx-peripheral
 │   ├── doc
 │   │   └── spi.pdf                # 文档
 │   └── rtl
+|       ├── amba_define.v
 │       ├── spi_clgen.v
 │       ├── spi_defines.v
 │       ├── spi_shift.v
