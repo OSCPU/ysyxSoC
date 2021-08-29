@@ -76,6 +76,10 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
     val uart = IO(chiselTypeOf(luart.module.uart))
     uart <> luart.module.uart
     spi <> lspi.module.spi_bundle
+
+    val intr_to_cpu = IO(Output(Bool()))
+    val intr_from_chipSlave = IO(Input(Bool()))
+    intr_to_cpu := intr_from_chipSlave
   }
 }
 
@@ -105,11 +109,14 @@ class ysyxSoCFull(implicit p: Parameters) extends LazyModule {
     fpga.slave.map(_ := DontCare)
 
     val cpu_reset  = IO(chiselTypeOf(masic.cpu_reset))
+    val cpu_intr   = IO(Output(Bool()))
     val cpu_master = IO(chiselTypeOf(masic.cpu_master))
     val cpu_slave  = IO(chiselTypeOf(masic.cpu_slave))
     cpu_reset := masic.cpu_reset
     masic.cpu_master <> cpu_master
     cpu_slave <> masic.cpu_slave
+    cpu_intr := masic.intr_to_cpu
+    masic.intr_from_chipSlave := false.B //mfpga.intr_to_chipMaster
 
     val spiFlash = Module(new spiFlash)
     val uart = IO(chiselTypeOf(masic.uart))
