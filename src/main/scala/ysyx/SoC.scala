@@ -38,8 +38,11 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
 
   val chiplinkNode = AXI4SlaveNodeGenerator(p(ExtBus), ChipLinkParam.allSpace)
 
-  val luart = LazyModule(new APBUart16550(AddressSet.misaligned(0x20001000, 0x1000)))
-  val lspi  = LazyModule(new APBSPI(AddressSet.misaligned(0x10000000, 0x10001000)))
+  val luart = LazyModule(new APBUart16550(AddressSet.misaligned(0x10000000, 0x1000)))
+  val lspi  = LazyModule(new APBSPI(
+    AddressSet.misaligned(0x10001000, 0x1000) ++    // SPI controller
+    AddressSet.misaligned(0x30000000, 0x10000000)   // XIP flash
+  ))
 
   List(lspi.node, luart.node).map(_ := apbxbar)
   List(chiplinkNode, apbxbar := AXI4ToAPB()).map(_ := xbar)
