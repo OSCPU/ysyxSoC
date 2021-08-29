@@ -13,5 +13,4 @@ class TestHarness()(implicit p: Parameters) extends Module {
   dut.cpu_master := DontCare
   dut.cpu_slave := DontCare
   dut.uart.rx := true.B
-  dut.spi.miso := true.B
 }

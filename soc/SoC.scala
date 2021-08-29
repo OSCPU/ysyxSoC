@@ -111,9 +111,9 @@ class ysyxSoCFull(implicit p: Parameters) extends LazyModule {
     masic.cpu_master <> cpu_master
     cpu_slave <> masic.cpu_slave
 
-    val spi  = IO(chiselTypeOf(masic.spi))
+    val spiFlash = Module(new spiFlash)
     val uart = IO(chiselTypeOf(masic.uart))
-    spi  <> masic.spi
+    spiFlash.io <> masic.spi
     uart <> masic.uart
   }
 }

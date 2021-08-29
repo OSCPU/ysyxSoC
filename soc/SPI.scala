@@ -13,7 +13,6 @@ class SPIIO(val csWidth: Int = 2) extends Bundle {
   val cs = Output(UInt(csWidth.W))
   val mosi = Output(Bool())
   val miso = Input(Bool())
-  val irq_out = Output(Bool())
 }
 
 class spi extends BlackBox {
@@ -22,7 +21,12 @@ class spi extends BlackBox {
     val resetn = Input(Bool())
     val in = Flipped(new APBBundle(APBBundleParameters(addrBits = 32, dataBits = 32)))
     val spi = new SPIIO
+    val spi_irq_out = Output(Bool())
   })
+}
+
+class spiFlash extends BlackBox {
+  val io = IO(Flipped(new SPIIO))
 }
 
 class APBSPI(address: Seq[AddressSet])(implicit p: Parameters) extends LazyModule {
@@ -48,4 +52,3 @@ class APBSPI(address: Seq[AddressSet])(implicit p: Parameters) extends LazyModul
     spi_bundle <> mspi.io.spi
   }
 }
-
