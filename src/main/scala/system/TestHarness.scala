@@ -17,7 +17,6 @@ class TestHarness()(implicit p: Parameters) extends Module {
   dut.cpu_master.foreach(_.tieoff())
   dut.cpu_slave.tieoff()
   dut.uart.rx := true.B
-  dut.spi.miso := true.B
 }
 
 class TestHarness2()(implicit p: Parameters) extends Module {
