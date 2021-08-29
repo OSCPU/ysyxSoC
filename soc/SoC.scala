@@ -23,18 +23,6 @@ object AXI4SlaveNodeGenerator {
       )).toSeq)
 }
 
-object APBSlaveNodeGenerator {
-  def apply(params: Option[MasterPortParams], base: BigInt, size: BigInt)(implicit valName: ValName) =
-    APBSlaveNode(params.map(p => APBSlavePortParameters(
-      slaves = Seq(APBSlaveParameters(
-        address    = AddressSet.misaligned(base, size),
-        executable = p.executable
-      )),
-      beatBytes = 4
-    )).toSeq)
-}
-
-// split cpu mem and mmio
 class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
   val idBits = 4
 
@@ -51,10 +39,10 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
   val chiplinkNode = AXI4SlaveNodeGenerator(p(ExtBus),
       ChipLinkParam.mmio.base, ChipLinkParam.mmio.mask + 1 + ChipLinkParam.mem.mask + 1)
 
-  val spiNode  = APBSlaveNodeGenerator(p(ExtBus), 0x10000000, 0x10001000)
-  val uartNode = APBSlaveNodeGenerator(p(ExtBus), 0x20001000, 0x1000)
+  val luart = LazyModule(new APBUart16550(AddressSet.misaligned(0x20001000, 0x1000)))
+  val lspi  = LazyModule(new APBSPI(AddressSet.misaligned(0x10000000, 0x10001000)))
 
-  List(spiNode, uartNode).map(_ := apbxbar)
+  List(lspi.node, luart.node).map(_ := apbxbar)
   List(chiplinkNode, apbxbar := AXI4ToAPB()).map(_ := xbar)
   xbar := cpuMasterNode
 
@@ -82,11 +70,10 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
     cpu_slave <> chiplink_dma
 
     // expose spi and uart slave interface as ports
-    val spi = IO(HeterogeneousBag.fromNode(spiNode.in))
-    val uart = IO(HeterogeneousBag.fromNode(uartNode.in))
-    List((spi, spiNode), (uart, uartNode)).map { case (io, node) =>
-      (io zip node.in) foreach { case (io, (bundle, _)) => io <> bundle }
-    }
+    val spi = IO(chiselTypeOf(lspi.module.spi_bundle))
+    val uart = IO(chiselTypeOf(luart.module.uart))
+    uart <> luart.module.uart
+    spi <> lspi.module.spi_bundle
   }
 }
 

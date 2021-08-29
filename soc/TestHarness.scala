@@ -12,6 +12,6 @@ class TestHarness()(implicit p: Parameters) extends Module {
   dut.dontTouchPorts()
   dut.cpu_master := DontCare
   dut.cpu_slave := DontCare
-  dut.spi.foreach(_ := DontCare)
-  dut.uart.foreach(_ := DontCare)
+  dut.uart.rx := true.B
+  dut.spi.miso := true.B
 }
