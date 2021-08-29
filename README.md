@@ -25,7 +25,7 @@
 1. 将处理器的复位PC设置为`0x3000_0000`
 1. 在verilator编译选项中添加`--timescale "1ns/1ns"`
 1. 在verilator初始化时调用`spiFlash.cpp`中的`flash_init(img)`函数,
-   其中参数`img`是bin文件的路径, 用于将bin文件中的指令序列放置在flash中
+   其中参数`img`是bin文件的路径, 用于将bin文件中的指令序列放置在flash中，在`ysyxSoC/src/main/resources/ysyx-peripheral/bin`目录下已经提供了一个hello示例
 1. 通过verilator进行仿真即可
 
 ## 模块说明
@@ -43,11 +43,13 @@
 ```
 ysyxSoC/src/main/resources/ysyx-peripheral
 ├── Makefile                       # 用于将Chisel代码编译成ysyxSoCFull.v, 用户无需使用
+├── bin
+│   └── hello-flash.bin
 ├── spi                            # SPI控制器
 │   ├── doc
 │   │   └── spi.pdf                # 文档
 │   └── rtl
-|       ├── amba_define.v
+│       ├── amba_define.v
 │       ├── spi_clgen.v
 │       ├── spi_defines.v
 │       ├── spi_shift.v
