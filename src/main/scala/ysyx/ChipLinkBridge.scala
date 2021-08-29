@@ -19,6 +19,8 @@ object ChipLinkParam {
   // Must have a cacheable address sapce.
   val mem  = AddressSet(0x80000000L, 0x80000000L - 1)
   val mmio = AddressSet(0x40000000L, 0x40000000L - 1)
+
+  val allSpace = Seq(mem, mmio)
 }
 
 

@@ -12,10 +12,10 @@ import freechips.rocketchip.amba.apb._
 import freechips.rocketchip.system.SimAXIMem
 
 object AXI4SlaveNodeGenerator {
-  def apply(params: Option[MasterPortParams], base: BigInt, size: BigInt)(implicit valName: ValName) =
+  def apply(params: Option[MasterPortParams], address: Seq[AddressSet])(implicit valName: ValName) =
     AXI4SlaveNode(params.map(p => AXI4SlavePortParameters(
         slaves = Seq(AXI4SlaveParameters(
-          address       = AddressSet.misaligned(base, size),
+          address       = address,
           executable    = p.executable,
           supportsWrite = TransferSizes(1, p.maxXferBytes),
           supportsRead  = TransferSizes(1, p.maxXferBytes))),
@@ -36,8 +36,7 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
         name = "cpu",
         id   = IdRange(0, 1 << idBits))))).toSeq)
 
-  val chiplinkNode = AXI4SlaveNodeGenerator(p(ExtBus),
-      ChipLinkParam.mmio.base, ChipLinkParam.mmio.mask + 1 + ChipLinkParam.mem.mask + 1)
+  val chiplinkNode = AXI4SlaveNodeGenerator(p(ExtBus), ChipLinkParam.allSpace)
 
   val luart = LazyModule(new APBUart16550(AddressSet.misaligned(0x20001000, 0x1000)))
   val lspi  = LazyModule(new APBSPI(AddressSet.misaligned(0x10000000, 0x10001000)))
