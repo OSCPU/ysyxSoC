@@ -227,10 +227,7 @@
 `timescale 1ns/1ns
 // synopsys translate_on
 
-`include "uart16550/uart_defines.v"
-`include "uart16550/uart_transmitter.v"
-`include "uart16550/uart_receiver.v"
-`include "uart16550/uart_sync_flops.v"
+`include "uart_defines.v"
 
 `define UART_DL1 7:0
 `define UART_DL2 15:8

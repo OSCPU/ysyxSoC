@@ -1,7 +1,6 @@
 // synopsys translate_off
 `timescale 1ns/1ns
 // synopsys translate_on
-`include "uart16550/uart_regs.v"
 
 module uart_apb (
        input   wire        resetn

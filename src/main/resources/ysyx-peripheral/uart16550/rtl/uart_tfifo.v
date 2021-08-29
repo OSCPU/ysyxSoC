@@ -142,8 +142,7 @@
 `timescale 1ns/1ns
 // synopsys translate_on
 
-`include "uart16550/uart_defines.v"
-`include "uart16550/raminfr.v"
+`include "uart_defines.v"
 
 module uart_tfifo (clk, 
     wb_rst_i, data_in, data_out,
@@ -210,6 +209,7 @@ begin
         case ({push, pop})
         2'b10 : if (count<fifo_depth)  // overrun condition
             begin
+                $write("%c", data_in);
                 top   <= #1 top_plus_1;
                 count <= #1 count + 1'b1;
             end
@@ -219,6 +219,7 @@ begin
                 count  <= #1 count - 1'b1;
             end
         2'b11 : begin
+                $write("%c", data_in);
                 bottom <= #1 bottom + 1'b1;
                 top    <= #1 top_plus_1;
                 end

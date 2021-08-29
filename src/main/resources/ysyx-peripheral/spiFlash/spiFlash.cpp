@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <stdlib.h>
-
+#include <cstring>
 #include <svdpi.h>
 
 #define Assert(cond, ...) \
@@ -42,4 +42,8 @@ extern "C" void flash_init(char *img) {
   fseek(fp, 0, SEEK_SET);
   assert(fread(flash, size, 1, fp) == 1);
   fclose(fp);
+}
+
+extern "C" void flash_memcpy(uint8_t* src, size_t len){
+  memcpy(flash, src, len);
 }

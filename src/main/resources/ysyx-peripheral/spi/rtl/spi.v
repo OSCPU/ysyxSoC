@@ -32,8 +32,8 @@
 
 module spi
 #( 
-parameter   flash_addr_start = 32'h10000000, 
-parameter   flash_addr_end   = 32'h1fffffff,
+parameter   flash_addr_start = 32'h30000000,
+parameter   flash_addr_end   = 32'h3fffffff,
 parameter   spi_cs_num       = 2
 )
 (
