@@ -39,7 +39,6 @@
 //////////////////////////////////////////////////////////////////////
 
 `include "spi_defines.v"
-`include "timescale.v"
 
 module spi_clgen (clk_in, rst, go, enable, last_clk, divider, clk_out, pos_edge, neg_edge);
 

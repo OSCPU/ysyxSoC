@@ -196,8 +196,7 @@
 `timescale 1ns/1ns
 // synopsys translate_on
 
-`include "uart16550/uart_defines.v"
-`include "uart16550/uart_rfifo.v"
+`include "uart_defines.v"
 
 module uart_receiver (clk, wb_rst_i, lcr, rf_pop, srx_pad_i, enable,
 	counter_t, rf_count, rf_data_out, rf_error_bit, rf_overrun, rx_reset, lsr_mask, rstate, rf_push_pulse);

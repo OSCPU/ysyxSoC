@@ -142,8 +142,7 @@
 `timescale 1ns/1ns
 // synopsys translate_on
 
-`include "uart16550/uart_defines.v"
-`include "uart16550/raminfr.v"
+`include "uart_defines.v"
 
 module uart_tfifo (clk,
     wb_rst_i, data_in, data_out,

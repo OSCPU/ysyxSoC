@@ -152,8 +152,7 @@
 `timescale 1ns/1ns
 // synopsys translate_on
 
-`include "uart16550/uart_defines.v"
-`include "uart16550/uart_tfifo.v"
+`include "uart_defines.v"
 
 module uart_transmitter (clk, wb_rst_i, lcr, tf_push, wb_dat_i, enable,
                          stx_pad_o, tstate, tf_count, tx_reset, lsr_mask);
@@ -312,7 +311,7 @@ always @(posedge clk or posedge wb_rst_i) begin
                 else
                 if (counter == 5'b00001)
                 begin
-                    counter <= #1 4'b0;
+                    counter <= #1 5'b0;
                     tstate <= #1 s_send_stop;
                 end
                 else
@@ -322,8 +321,8 @@ always @(posedge clk or posedge wb_rst_i) begin
     s_send_stop :  begin
                 if (~|counter)
                   begin
-                        casex ({lcr[`UART_LC_SB],lcr[`UART_LC_BITS]})
-                          3'b0xx:      counter <= #1 5'b01101;     // 1 stop bit ok igor
+                        casez ({lcr[`UART_LC_SB],lcr[`UART_LC_BITS]})
+                          3'b0zz:      counter <= #1 5'b01101;     // 1 stop bit ok igor
                           3'b100:      counter <= #1 5'b10101;     // 1.5 stop bit
                           default:      counter <= #1 5'b11101;     // 2 stop bits
                         endcase

@@ -227,10 +227,7 @@
 `timescale 1ns/1ns
 // synopsys translate_on
 
-`include "uart16550/uart_defines.v"
-`include "uart16550/uart_transmitter.v"
-`include "uart16550/uart_receiver.v"
-`include "uart16550/uart_sync_flops.v"
+`include "uart_defines.v"
 
 `define UART_DL1 7:0
 `define UART_DL2 15:8
@@ -414,7 +411,7 @@ always @(dl or dlab or ier or iir or scratch
 begin
     case (wb_addr_i)
         `UART_REG_RB   : wb_dat_o = dlab ? dl[`UART_DL1] : rf_data_out[10:3];
-        `UART_REG_IE   : wb_dat_o = dlab ? dl[`UART_DL2] : ier;
+        `UART_REG_IE   : wb_dat_o = dlab ? dl[`UART_DL2] : {4'b0, ier};
         `UART_REG_II   : wb_dat_o = {4'b1100,iir};
         `UART_REG_LC   : wb_dat_o = lcr;
         `UART_REG_LS   : wb_dat_o = lsr;
