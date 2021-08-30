@@ -64,7 +64,7 @@ ysyxSoC/src/main/resources/ysyx-peripheral
 │   └── rtl
 │       ├── raminfr.v
 │       ├── timescale.v
-│       ├── uart_apb.v             # 顶层文件(包含flash的XIP模式)
+│       ├── uart_apb.v             # 顶层文件
 │       ├── uart_defines.v
 │       ├── uart_receiver.v
 │       ├── uart_regs.v
