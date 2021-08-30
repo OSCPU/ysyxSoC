@@ -87,6 +87,7 @@ class ysyxSoCFPGA(implicit p: Parameters) extends ChipLinkSlave
 
 class ysyxSoCFull(implicit p: Parameters) extends LazyModule {
   val asic = LazyModule(new ysyxSoCASIC)
+  ElaborationArtefacts.add("graphml", graphML)
 
   override lazy val module = new LazyModuleImp(this) with DontTouch {
     val fpga = LazyModule(new ysyxSoCFPGA)
