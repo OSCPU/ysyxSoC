@@ -24,8 +24,11 @@
    * 将`cpu_intr`连接到处理器的外部中断入口
 1. 将处理器的复位PC设置为`0x3000_0000`
 1. 在verilator编译选项中添加`--timescale "1ns/1ns"`
-1. 在verilator初始化时调用`spiFlash.cpp`中的`flash_init(img)`函数,
-   其中参数`img`是bin文件的路径, 用于将bin文件中的指令序列放置在flash中，在`ysyxSoC/src/main/resources/ysyx-peripheral/bin`目录下已经提供了一个hello示例
+1. 在verilator初始化时对flash进行初始化, 有以下两种方式:
+   * 调用`spiFlash.cpp`中的`flash_init(img)`函数, 用于将bin文件中的指令序列放置在flash中,
+     其中参数`img`是bin文件的路径, 在`ysyxSoC/src/main/resources/ysyx-peripheral/bin`目录下已经提供了一个hello示例
+   * 调用`spiFlash.cpp`中的`flash_memcpy(src, len)`函数, 用于将已经读入内存的指令序列放置在flash中,
+     其中参数`src`是指令序列的地址, `len`是指令序列的长度
 1. 通过verilator进行仿真即可
 
 ## 模块说明
