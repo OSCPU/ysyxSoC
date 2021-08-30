@@ -101,7 +101,7 @@ ysyxSoC/src/main/scala/ysyx
 | reserve           | `0x0201_0000~0x0fff_ffff`|
 | UART16550         | `0x1000_0000~0x1000_0fff`|
 | SPI控制器         | `0x1000_1000~0x1000_1fff`|
-| reserve           | `0x0100_2000~0x2fff_ffff`|
+| reserve           | `0x1000_2000~0x2fff_ffff`|
 | SPI-flash XIP模式 | `0x3000_0000~0x3fff_ffff`|
 | ChipLink MMIO     | `0x4000_0000~0x7fff_ffff`|
 | memory            | `0x8000_0000~0xffff_ffff`|
