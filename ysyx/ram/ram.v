@@ -9,7 +9,7 @@ output  reg [Bits-1:0]      Q;
 input                   CLK;
 input                   CEN;
 input                   WEN;
-input   [Add_Width:0]   A;
+input   [Add_Width-1:0] A;
 input   [Bits-1:0]      D;
 
 reg [Bits-1:0] ram [0:Word_Depth-1];
