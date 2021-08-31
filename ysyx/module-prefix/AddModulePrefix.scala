@@ -23,6 +23,10 @@ class AddModulePrefix extends Transform with DependencyAPIMigration {
       case ModulePrefixAnnotation(p) => p
     }.get
 
+    val blacklist = List(
+      "S011HD1P_X32Y2D128"
+    )
+
     val extModules = state.circuit.modules.filter({ m =>
       m match {
         case blackbox: ExtModule => true
@@ -30,7 +34,8 @@ class AddModulePrefix extends Transform with DependencyAPIMigration {
       }
     }).map(_.name)
 
-    def rename(old: String): String = if(extModules.contains(old)) old else prefix + old
+    def rename(old: String): String = if (blacklist.map(_ == old).reduce(_ || _)) old
+      else if(extModules.contains(old)) old else prefix + old
 
     val renameMap = RenameMap()
 
