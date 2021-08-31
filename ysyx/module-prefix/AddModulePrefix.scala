@@ -19,8 +19,8 @@ class AddModulePrefix extends Transform with DependencyAPIMigration {
     }.get
 
     def onStmt(s: Statement): Statement = s match {
-      case DefInstance(info, name, module) =>
-        DefInstance(info, name, prefix + module)
+      case DefInstance(info, name, module, tpe) =>
+        DefInstance(info, name, prefix + module, tpe)
       case other =>
         other.mapStmt(onStmt)
     }
