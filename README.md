@@ -11,10 +11,11 @@
    ```
    git clone --depth 1 https://github.com/OSCPU/ysyxSoC.git
    ```
-1. 将`ysyxSoC/src/main/resources/ysyx-peripheral`目录及其子目录下的所有`.v`文件加入verilator的Verilog文件列表
-1. 将`ysyxSoC/src/main/resources/ysyx-peripheral/uart16550/rtl`和`ysyxSoC/src/main/resources/ysyx-peripheral/spi/rtl`两个目录加入包含路径中
-1. 将`ysyxSoC/src/main/resources/ysyx-peripheral/spiFlash/spiFlash.cpp`文件加入verilator的C++文件列表
-1. 实例化`ysyxSoCFull`模块(在`ysyxSoC/src/main/resources/ysyx-peripheral/ysyxSoCFull.v`中定义),
+1. 将`ysyxSoC/ysyx/peripheral`目录及其子目录下的所有`.v`文件加入verilator的Verilog文件列表
+1. 将`ysyxSoC/ysyx/soc/ysyxSoCFull.v`文件加入verilator的Verilog文件列表
+1. 将`ysyxSoC/ysyx/peripheral/uart16550/rtl`和`ysyxSoC/ysyx/peripheral/spi/rtl`两个目录加入包含路径中
+1. 将`ysyxSoC/ysyx/peripheral/spiFlash/spiFlash.cpp`文件加入verilator的C++文件列表
+1. 实例化`ysyxSoCFull`模块(在`ysyxSoC/ysyx/soc/ysyxSoCFull.v`中定义),
    并对该模块的以下端口进行连接:
    * 输入正确的`clock`和`reset`
    * 将`cpu_reset`连接到处理器的复位端
@@ -26,7 +27,7 @@
 1. 在verilator编译选项中添加`--timescale "1ns/1ns"`
 1. 在verilator初始化时对flash进行初始化, 有以下两种方式:
    * 调用`spiFlash.cpp`中的`flash_init(img)`函数, 用于将bin文件中的指令序列放置在flash中,
-     其中参数`img`是bin文件的路径, 在`ysyxSoC/src/main/resources/ysyx-peripheral/bin`目录下已经提供了一个hello示例
+     其中参数`img`是bin文件的路径, 在`ysyxSoC/ysyx/bin`目录下已经提供了一个hello示例
    * 调用`spiFlash.cpp`中的`flash_memcpy(src, len)`函数, 用于将已经读入内存的指令序列放置在flash中,
      其中参数`src`是指令序列的地址, `len`是指令序列的长度
 1. 通过verilator进行仿真即可
@@ -44,38 +45,43 @@
 ### Verilog相关文件
 
 ```
-ysyxSoC/src/main/resources/ysyx-peripheral
-├── Makefile                       # 用于将Chisel代码编译成ysyxSoCFull.v, 用户无需使用
-├── bin
-│   └── hello-flash.bin
-├── spi                            # SPI控制器
-│   ├── doc
-│   │   └── spi.pdf                # 文档
-│   └── rtl
-│       ├── amba_define.v
-│       ├── spi_clgen.v
-│       ├── spi_defines.v
-│       ├── spi_shift.v
-│       ├── spi_top.v
-│       └── spi.v                  # 顶层文件(包含flash的XIP模式)
-├── spiFlash                       # 支持SPI模式的Flash颗粒简化模型
-│   ├── spiFlash.cpp
-│   └── spiFlash.v
-├── uart16550                      # UART16550控制器
-│   ├── doc
-│   │   └── UART_spec.pdf          # 文档
-│   └── rtl
-│       ├── raminfr.v
-│       ├── timescale.v
-│       ├── uart_apb.v             # 顶层文件
-│       ├── uart_defines.v
-│       ├── uart_receiver.v
-│       ├── uart_regs.v
-│       ├── uart_rfifo.v
-│       ├── uart_sync_flops.v
-│       ├── uart_tfifo.v
-│       └── uart_transmitter.v
-└── ysyxSoCFull.v                  # SoC的实现
+ysyxSoC/ysyx
+├── bin                            # 一些可运行的测试程序
+│   ├── hello-flash.bin
+│   └── hello-flash.elf
+├── peripheral
+│   ├── spi                        # SPI控制器
+│   │   ├── doc
+│   │   │   └── spi.pdf            # 文档
+│   │   └── rtl
+│   │       ├── amba_define.v
+│   │       ├── spi_clgen.v
+│   │       ├── spi_defines.v
+│   │       ├── spi_shift.v
+│   │       ├── spi_top.v
+│   │       └── spi.v              # 顶层文件(包含flash的XIP模式)
+│   ├── spiFlash                   # 支持SPI模式的Flash颗粒简化模型
+│   │   ├── spiFlash.cpp
+│   │   └── spiFlash.v
+│   └── uart16550                  # UART16550控制器
+│       ├── doc
+│       │   └── UART_spec.pdf      # 文档
+│       └── rtl
+│           ├── raminfr.v
+│           ├── timescale.v
+│           ├── uart_apb.v         # 顶层文件
+│           ├── uart_defines.v
+│           ├── uart_receiver.v
+│           ├── uart_regs.v
+│           ├── uart_rfifo.v
+│           ├── uart_sync_flops.v
+│           ├── uart_tfifo.v
+│           └── uart_transmitter.v
+├── ram
+│   └── ram.v                      # 接口与流片用RAM一致的简化行为模型
+└── soc
+    ├── Makefile                   # 用于将Chisel代码编译成ysyxSoCFull.v, 用户无需使用
+    └── ysyxSoCFull.v              # SoC的实现
 ```
 
 ### chisel相关文件
