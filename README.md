@@ -118,6 +118,11 @@ ysyxSoC/src/main/scala/ysyx
 * 若需要接入其它设备(如PLIC), 请在处理器内部接入,
   并将地址分配预留空间中, 避免与SoC的设备地址产生冲突
 
+## RAM替换
+
+我们提供了一个接口与流片用RAM一致的简化行为模型, 可用于RAM替换,
+具体步骤请参考[这里](./ysyx/ram/README.md).
+
 ## 为Verilog文件中的模块名添加前缀
 
 对于Chisel生成的Verilog代码, 我们可以通过一个firrtl transform实现模块名前缀的添加,
