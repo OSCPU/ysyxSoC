@@ -118,6 +118,13 @@ ysyxSoC/src/main/scala/ysyx
 * 若需要接入其它设备(如PLIC), 请在处理器内部接入,
   并将地址分配预留空间中, 避免与SoC的设备地址产生冲突
 
+## 为Verilog文件中的模块名添加前缀
+
+对于Chisel生成的Verilog代码, 我们可以通过一个firrtl transform实现模块名前缀的添加,
+具体步骤请参考[这里](./ysyx/module-prefix/README.md).
+
+对于手动开发的Verilog代码, 目前没有统一的方法进行模块名前缀的自动添加, 请手动进行添加.
+
 ## 注意事项
 
 **本项目中的SoC只用于在verilator中验证, 不参与流片环节!
