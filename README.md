@@ -78,7 +78,7 @@ ysyxSoC/ysyx
 │           ├── uart_tfifo.v
 │           └── uart_transmitter.v
 ├── ram
-│   └── ram.v                      # 接口与流片用RAM一致的简化行为模型
+│   └── S011HD1P_X32Y2D128.v       # 接口与流片用RAM一致的简化行为模型
 └── soc
     ├── Makefile                   # 用于将Chisel代码编译成ysyxSoCFull.v, 用户无需使用
     └── ysyxSoCFull.v              # SoC的实现
