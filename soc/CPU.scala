@@ -17,7 +17,7 @@ class ysyx_00000000 extends BlackBox {
   val io = IO(new Bundle {
     val clock = Input(Clock())
     val reset = Input(Reset())
-    val interrupt = Input(Bool())
+    val io_interrupt = Input(Bool())
     val io_master = AXI4Bundle(CPUAXI4BundleParameters())
     val io_slave = Flipped(AXI4Bundle(CPUAXI4BundleParameters()))
   })
@@ -38,7 +38,7 @@ class CPU(idBits: Int)(implicit p: Parameters) extends LazyModule {
     val cpu = Module(new ysyx_00000000)
     cpu.io.clock := clock
     cpu.io.reset := reset
-    cpu.io.interrupt := interrupt
+    cpu.io.io_interrupt := interrupt
     cpu.io.io_slave <> slave
     master <> cpu.io.io_master
   }
