@@ -24,18 +24,10 @@ object AXI4SlaveNodeGenerator {
 }
 
 class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
-  val idBits = 4
-
   val chipMaster = LazyModule(new ChipLinkMaster)
   val xbar = AXI4Xbar()
   val apbxbar = LazyModule(new APBFanout).node
-
-  val cpuMasterNode = AXI4MasterNode(p(ExtIn).map(params =>
-    AXI4MasterPortParameters(
-      masters = Seq(AXI4MasterParameters(
-        name = "cpu",
-        id   = IdRange(0, 1 << idBits))))).toSeq)
-
+  val cpu = LazyModule(new CPU(idBits = ChipLinkParam.idBits))
   val chiplinkNode = AXI4SlaveNodeGenerator(p(ExtBus), ChipLinkParam.allSpace)
 
   val luart = LazyModule(new APBUart16550(AddressSet.misaligned(0x10000000, 0x1000)))
@@ -46,40 +38,34 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
 
   List(lspi.node, luart.node).map(_ := apbxbar)
   List(chiplinkNode, apbxbar := AXI4ToAPB()).map(_ := xbar)
-  xbar := cpuMasterNode
+  xbar := cpu.masterNode
 
   override lazy val module = new Impl
   class Impl extends LazyModuleImp(this) with DontTouch {
     // generate delayed reset for cpu, since chiplink should finish reset
     // to initialize some async modules before accept any requests from cpu
-    val cpu_reset = IO(Flipped(chiselTypeOf(reset)))
-    cpu_reset := SynchronizerShiftReg(reset.asBool, 10) || reset.asBool
-
-    // expose cpu master interface as ports
-    val cpu_master  = IO(Flipped(HeterogeneousBag.fromNode(cpuMasterNode.out)))
-    (cpuMasterNode.out  zip cpu_master ) foreach { case ((bundle, _), io) => bundle <> io }
-
-    // expose chiplink fpga I/O interface as ports
-    val fpga_io = IO(chiselTypeOf(chipMaster.module.fpga_io))
-    fpga_io <> chipMaster.module.fpga_io
+    //val cpu_reset = IO(Flipped(chiselTypeOf(reset)))
+    cpu.module.reset := SynchronizerShiftReg(reset.asBool, 10) || reset.asBool
 
     // connect chiplink slave interface to crossbar
     (chipMaster.slave zip chiplinkNode.in) foreach { case (io, (bundle, _)) => io <> bundle }
 
-    // expose chiplink dma interface as ports
-    val chiplink_dma = chipMaster.master_mem(0)
-    val cpu_slave = IO(chiselTypeOf(chiplink_dma))
-    cpu_slave <> chiplink_dma
+    // connect chiplink dma interface to cpu
+    cpu.module.slave <> chipMaster.master_mem
+
+    // connect interrupt signal to cpu
+    val intr_from_chipSlave = IO(Input(Bool()))
+    cpu.module.interrupt := intr_from_chipSlave
+
+    // expose chiplink fpga I/O interface as ports
+    val fpga_io = IO(chiselTypeOf(chipMaster.module.fpga_io))
+    fpga_io <> chipMaster.module.fpga_io
 
     // expose spi and uart slave interface as ports
     val spi = IO(chiselTypeOf(lspi.module.spi_bundle))
     val uart = IO(chiselTypeOf(luart.module.uart))
     uart <> luart.module.uart
     spi <> lspi.module.spi_bundle
-
-    val intr_to_cpu = IO(Output(Bool()))
-    val intr_from_chipSlave = IO(Input(Bool()))
-    intr_to_cpu := intr_from_chipSlave
   }
 }
 
@@ -94,6 +80,7 @@ class ysyxSoCFull(implicit p: Parameters) extends LazyModule {
     val fpga = LazyModule(new ysyxSoCFPGA)
     val mfpga = Module(fpga.module)
     val masic = asic.module
+    masic.dontTouchPorts()
 
     masic.fpga_io.b2c <> mfpga.fpga_io.c2b
     mfpga.fpga_io.b2c <> masic.fpga_io.c2b
@@ -108,20 +95,11 @@ class ysyxSoCFull(implicit p: Parameters) extends LazyModule {
     fpga.master_mmio.map(_ := DontCare)
     fpga.slave.map(_ := DontCare)
 
-    val cpu_reset  = IO(chiselTypeOf(masic.cpu_reset))
-    val cpu_intr   = IO(Output(Bool()))
-    val cpu_master = IO(chiselTypeOf(masic.cpu_master))
-    val cpu_slave  = IO(chiselTypeOf(masic.cpu_slave))
-    cpu_reset := masic.cpu_reset
-    masic.cpu_master <> cpu_master
-    cpu_slave <> masic.cpu_slave
-    cpu_intr := masic.intr_to_cpu
-    masic.intr_from_chipSlave := false.B //mfpga.intr_to_chipMaster
+    masic.intr_from_chipSlave := false.B
 
     val flash = Module(new flash)
-    val uart = IO(chiselTypeOf(masic.uart))
     flash.io <> masic.spi
     flash.io.ss := masic.spi.ss(0)
-    uart <> masic.uart
+    masic.uart.rx := false.B
   }
 }
