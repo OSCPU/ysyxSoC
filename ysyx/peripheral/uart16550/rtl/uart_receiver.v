@@ -279,122 +279,122 @@ always @(posedge clk or posedge wb_rst_i)
 begin
   if (wb_rst_i)
   begin
-     rstate 			<= #1 sr_idle;
-	  rbit_in 				<= #1 1'b0;
-	  rcounter16 			<= #1 0;
-	  rbit_counter 		<= #1 0;
-	  rparity_xor 		<= #1 1'b0;
-	  rframing_error 	<= #1 1'b0;
-	  rparity_error 		<= #1 1'b0;
-	  rparity 				<= #1 1'b0;
-	  rshift 				<= #1 0;
-	  rf_push 				<= #1 1'b0;
-	  rf_data_in 			<= #1 0;
+     rstate 			<=  sr_idle;
+	  rbit_in 				<=  1'b0;
+	  rcounter16 			<=  0;
+	  rbit_counter 		<=  0;
+	  rparity_xor 		<=  1'b0;
+	  rframing_error 	<=  1'b0;
+	  rparity_error 		<=  1'b0;
+	  rparity 				<=  1'b0;
+	  rshift 				<=  0;
+	  rf_push 				<=  1'b0;
+	  rf_data_in 			<=  0;
   end
   else
   if (enable)
   begin
 	case (rstate)
 	sr_idle : begin
-			rf_push 			  <= #1 1'b0;
-			rf_data_in 	  <= #1 0;
-			rcounter16 	  <= #1 4'b1110;
+			rf_push 			  <=  1'b0;
+			rf_data_in 	  <=  0;
+			rcounter16 	  <=  4'b1110;
 			if (srx_pad_i==1'b0 & ~break_error)   // detected a pulse (start bit?)
 			begin
-				rstate 		  <= #1 sr_rec_start;
+				rstate 		  <=  sr_rec_start;
 			end
 		end
 	sr_rec_start :	begin
-  			rf_push 			  <= #1 1'b0;
+  			rf_push 			  <=  1'b0;
 				if (rcounter16_eq_7)    // check the pulse
 					if (srx_pad_i==1'b1)   // no start bit
-						rstate <= #1 sr_idle;
+						rstate <=  sr_idle;
 					else            // start bit detected
-						rstate <= #1 sr_rec_prepare;
-				rcounter16 <= #1 rcounter16_minus_1;
+						rstate <=  sr_rec_prepare;
+				rcounter16 <=  rcounter16_minus_1;
 			end
 	sr_rec_prepare:begin
 				case (lcr[/*`UART_LC_BITS*/1:0])  // number of bits in a word
-				2'b00 : rbit_counter <= #1 3'b100;
-				2'b01 : rbit_counter <= #1 3'b101;
-				2'b10 : rbit_counter <= #1 3'b110;
-				2'b11 : rbit_counter <= #1 3'b111;
+				2'b00 : rbit_counter <=  3'b100;
+				2'b01 : rbit_counter <=  3'b101;
+				2'b10 : rbit_counter <=  3'b110;
+				2'b11 : rbit_counter <=  3'b111;
 				endcase
 				if (rcounter16_eq_0)
 				begin
-					rstate		<= #1 sr_rec_bit;
-					rcounter16	<= #1 4'b1110;
-					rshift		<= #1 0;
+					rstate		<=  sr_rec_bit;
+					rcounter16	<=  4'b1110;
+					rshift		<=  0;
 				end
 				else
-					rstate <= #1 sr_rec_prepare;
-				rcounter16 <= #1 rcounter16_minus_1;
+					rstate <=  sr_rec_prepare;
+				rcounter16 <=  rcounter16_minus_1;
 			end
 	sr_rec_bit :	begin
 				if (rcounter16_eq_0)
-					rstate <= #1 sr_end_bit;
+					rstate <=  sr_end_bit;
 				if (rcounter16_eq_7) // read the bit
 					case (lcr[/*`UART_LC_BITS*/1:0])  // number of bits in a word
-					2'b00 : rshift[4:0]  <= #1 {srx_pad_i, rshift[4:1]};
-					2'b01 : rshift[5:0]  <= #1 {srx_pad_i, rshift[5:1]};
-					2'b10 : rshift[6:0]  <= #1 {srx_pad_i, rshift[6:1]};
-					2'b11 : rshift[7:0]  <= #1 {srx_pad_i, rshift[7:1]};
+					2'b00 : rshift[4:0]  <=  {srx_pad_i, rshift[4:1]};
+					2'b01 : rshift[5:0]  <=  {srx_pad_i, rshift[5:1]};
+					2'b10 : rshift[6:0]  <=  {srx_pad_i, rshift[6:1]};
+					2'b11 : rshift[7:0]  <=  {srx_pad_i, rshift[7:1]};
 					endcase
-				rcounter16 <= #1 rcounter16_minus_1;
+				rcounter16 <=  rcounter16_minus_1;
 			end
 	sr_end_bit :   begin
 				if (rbit_counter==3'b0) // no more bits in word
 					if (lcr[`UART_LC_PE]) // choose state based on parity
-						rstate <= #1 sr_rec_parity;
+						rstate <=  sr_rec_parity;
 					else
 					begin
-						rstate <= #1 sr_rec_stop;
-						rparity_error <= #1 1'b0;  // no parity - no error :)
+						rstate <=  sr_rec_stop;
+						rparity_error <=  1'b0;  // no parity - no error :)
 					end
 				else		// else we have more bits to read
 				begin
-					rstate <= #1 sr_rec_bit;
-					rbit_counter <= #1 rbit_counter - 1'b1;
+					rstate <=  sr_rec_bit;
+					rbit_counter <=  rbit_counter - 1'b1;
 				end
-				rcounter16 <= #1 4'b1110;
+				rcounter16 <=  4'b1110;
 			end
 	sr_rec_parity: begin
 				if (rcounter16_eq_7)	// read the parity
 				begin
-					rparity <= #1 srx_pad_i;
-					rstate <= #1 sr_ca_lc_parity;
+					rparity <=  srx_pad_i;
+					rstate <=  sr_ca_lc_parity;
 				end
-				rcounter16 <= #1 rcounter16_minus_1;
+				rcounter16 <=  rcounter16_minus_1;
 			end
 	sr_ca_lc_parity : begin    // rcounter equals 6
-				rcounter16  <= #1 rcounter16_minus_1;
-				rparity_xor <= #1 ^{rshift,rparity}; // calculate parity on all incoming data
-				rstate      <= #1 sr_check_parity;
+				rcounter16  <=  rcounter16_minus_1;
+				rparity_xor <=  ^{rshift,rparity}; // calculate parity on all incoming data
+				rstate      <=  sr_check_parity;
 			  end
 	sr_check_parity: begin	  // rcounter equals 5
 				case ({lcr[`UART_LC_EP],lcr[`UART_LC_SP]})
-					2'b00: rparity_error <= #1  rparity_xor == 0;  // no error if parity 1
-					2'b01: rparity_error <= #1 ~rparity;      // parity should sticked to 1
-					2'b10: rparity_error <= #1  rparity_xor == 1;   // error if parity is odd
-					2'b11: rparity_error <= #1  rparity;	  // parity should be sticked to 0
+					2'b00: rparity_error <=   rparity_xor == 0;  // no error if parity 1
+					2'b01: rparity_error <=  ~rparity;      // parity should sticked to 1
+					2'b10: rparity_error <=   rparity_xor == 1;   // error if parity is odd
+					2'b11: rparity_error <=   rparity;	  // parity should be sticked to 0
 				endcase
-				rcounter16 <= #1 rcounter16_minus_1;
-				rstate <= #1 sr_wait1;
+				rcounter16 <=  rcounter16_minus_1;
+				rstate <=  sr_wait1;
 			  end
 	sr_wait1 :	if (rcounter16_eq_0)
 			begin
-				rstate <= #1 sr_rec_stop;
-				rcounter16 <= #1 4'b1110;
+				rstate <=  sr_rec_stop;
+				rcounter16 <=  4'b1110;
 			end
 			else
-				rcounter16 <= #1 rcounter16_minus_1;
+				rcounter16 <=  rcounter16_minus_1;
 	sr_rec_stop :	begin
 				if (rcounter16_eq_7)	// read the parity
 				begin
-					rframing_error <= #1 !srx_pad_i; // no framing error if input is 1 (stop bit)
-					rstate <= #1 sr_push;
+					rframing_error <=  !srx_pad_i; // no framing error if input is 1 (stop bit)
+					rstate <=  sr_push;
 				end
-				rcounter16 <= #1 rcounter16_minus_1;
+				rcounter16 <=  rcounter16_minus_1;
 			end
 	sr_push :	begin
 ///////////////////////////////////////
@@ -402,22 +402,22 @@ begin
         if(srx_pad_i | break_error)
           begin
             if(break_error)
-        		  rf_data_in 	<= #1 {8'b0, 3'b100}; // break input (empty character) to receiver FIFO
+        		  rf_data_in 	<=  {8'b0, 3'b100}; // break input (empty character) to receiver FIFO
             else
-        			rf_data_in  <= #1 {rshift, 1'b0, rparity_error, rframing_error};
-      		  rf_push 		  <= #1 1'b1;
-    				rstate        <= #1 sr_idle;
+        			rf_data_in  <=  {rshift, 1'b0, rparity_error, rframing_error};
+      		  rf_push 		  <=  1'b1;
+    				rstate        <=  sr_idle;
           end
         else if(~rframing_error)  // There's always a framing before break_error -> wait for break or srx_pad_i
           begin
-       			rf_data_in  <= #1 {rshift, 1'b0, rparity_error, rframing_error};
-      		  rf_push 		  <= #1 1'b1;
-      			rcounter16 	  <= #1 4'b1110;
-    				rstate 		  <= #1 sr_rec_start;
+       			rf_data_in  <=  {rshift, 1'b0, rparity_error, rframing_error};
+      		  rf_push 		  <=  1'b1;
+      			rcounter16 	  <=  4'b1110;
+    				rstate 		  <=  sr_rec_start;
           end
                       
 			end
-	default : rstate <= #1 sr_idle;
+	default : rstate <=  sr_idle;
 	endcase
   end  // if (enable)
 end // always of receiver
@@ -427,7 +427,7 @@ begin
   if(wb_rst_i)
     rf_push_q <= 0;
   else
-    rf_push_q <= #1 rf_push;
+    rf_push_q <=  rf_push;
 end
 
 assign rf_push_pulse = rf_push & ~rf_push_q;
@@ -457,13 +457,13 @@ assign 		brc_value = toc_value[9:2]; // the same as timeout but 1 insead of 4 ch
 always @(posedge clk or posedge wb_rst_i)
 begin
 	if (wb_rst_i)
-		counter_b <= #1 8'd159;
+		counter_b <=  8'd159;
 	else
 	if (srx_pad_i)
-		counter_b <= #1 brc_value; // character time length - 1
+		counter_b <=  brc_value; // character time length - 1
 	else
 	if(enable & counter_b != 8'b0)            // only work on enable times  break not reached.
-		counter_b <= #1 counter_b - 1;  // decrement break counter
+		counter_b <=  counter_b - 1;  // decrement break counter
 end // always of break condition detection
 
 ///
@@ -473,13 +473,13 @@ reg	[9:0]	counter_t;	// counts the timeout condition clocks
 always @(posedge clk or posedge wb_rst_i)
 begin
 	if (wb_rst_i)
-		counter_t <= #1 10'd639; // 10 bits for the default 8N1
+		counter_t <=  10'd639; // 10 bits for the default 8N1
 	else
 		if(rf_push_pulse || rf_pop || rf_count == 0) // counter is reset when RX FIFO is empty, accessed or above trigger level
-			counter_t <= #1 toc_value;
+			counter_t <=  toc_value;
 		else
 		if (enable && counter_t != 10'b0)  // we don't want to underflow
-			counter_t <= #1 counter_t - 1;		
+			counter_t <=  counter_t - 1;		
 end
 	
 endmodule

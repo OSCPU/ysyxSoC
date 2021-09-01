@@ -70,7 +70,7 @@
 `timescale 1ns/1ns
 // synopsys translate_on
 
-module uart_sync_flops
+module uart_sync_flops #(parameter width=1, parameter init_value=1'b0)
 (
   // internal signals
   rst_i,
@@ -82,8 +82,8 @@ module uart_sync_flops
 );
 
 parameter Tp            = 1;
-parameter width         = 1;
-parameter init_value    = 1'b0;
+// parameter width         = 1;
+// parameter init_value    = 1'b0;
 
 input                           rst_i;                  // reset input
 input                           clk_i;                  // clock input
@@ -105,20 +105,20 @@ reg     [width-1:0]             flop_0;
 always @ (posedge clk_i or posedge rst_i)
 begin
     if (rst_i)
-        flop_0 <= #Tp {width{init_value}};
+        flop_0 <=  {width{init_value}};
     else
-        flop_0 <= #Tp async_dat_i;    
+        flop_0 <=  async_dat_i;    
 end
 
 // second stage
 always @ (posedge clk_i or posedge rst_i)
 begin
     if (rst_i)
-        sync_dat_o <= #Tp {width{init_value}};
+        sync_dat_o <=  {width{init_value}};
     else if (stage1_rst_i)
-        sync_dat_o <= #Tp {width{init_value}};
+        sync_dat_o <=  {width{init_value}};
     else if (stage1_clk_en_i)
-        sync_dat_o <= #Tp flop_0;       
+        sync_dat_o <=  flop_0;       
 end
 
 endmodule

@@ -97,7 +97,7 @@ wire [`P_ADDR_W-1:0] paddr_align = {in_paddr[`P_ADDR_W-1:2], 2'b00};
 `define SPI_ENABLE     5'h1
 `define SPI_WAIT_READY 5'h2
 
-always@(posedge clk) begin
+always@(posedge clk or negedge resetn) begin
   if(!resetn)
     paddr_reg <= 32'h0;
   if(in_psel && in_penable)
@@ -123,24 +123,25 @@ assign pwdata_spi = cmd_state == `CMD_SPI_CSR   ? in_pwdata :
 
 assign in_prdata = prdata_spi;
 
-assign paddr_spi  = cmd_state == `CMD_SPI_CSR   ? paddr_align[4:0]:
+assign paddr_spi  = {27'b0,
+                    cmd_state == `CMD_SPI_CSR   ? paddr_align[4:0]:
                     cmd_state == `CMD_WR_TXD0   ? `SPI_ADDR_TXD0  :
                     cmd_state == `CMD_WR_TXD1   ? `SPI_ADDR_TXD1  :
                     cmd_state == `CMD_WR_CTL    ? `SPI_ADDR_CTL   :
-                    cmd_state == `CMD_RD_RXD0   ? `SPI_ADDR_RXD0  : 5'h0;
+                    cmd_state == `CMD_RD_RXD0   ? `SPI_ADDR_RXD0  : 5'h0};
 
 assign in_pready = cmd_state == `CMD_SPI_CSR  && spi_fire || 
                 cmd_state == `CMD_RD_RXD0  && spi_fire; 
 
 assign in_pslverr = pslverr_spi;
 
-assign spi_tx_data1 = 32'h03000000 | paddr_in[23:0]; //addr and readd cmd
+assign spi_tx_data1 = 32'h03000000 | {8'b0, paddr_in[23:0]}; //addr and readd cmd
 assign spi_tx_data0 = 32'h00000000;   //spi read 32bit data
 assign spi_ctl_data = `SPI_CTL_SS | `SPI_CTL_DIV | `SPI_CTL_RD_ENDIAN | `SPI_CTL_ASS | 
                       `SPI_CTL_IE | `SPI_CTL_TX_NEGEDGE | `SPI_CTL_GO | `SPI_CTL_CHAR_LEN;
                       //`SPI_CTL_IE | `SPI_CTL_GO | `SPI_CTL_CHAR_LEN;
 
-always@(posedge clk) begin
+always@(posedge clk or negedge resetn) begin
   if(!resetn)
     cmd_state <= `CMD_IDLE;
   else
@@ -202,7 +203,7 @@ wire spi_apb_start;
 
 assign spi_apb_start = cmd_state != `CMD_IDLE && cmd_state != `CMD_WAIT_IRQ ;
 
-always@(posedge clk) begin
+always@(posedge clk or negedge resetn) begin
   if(!resetn)
     spi_state <= 5'h0;
   else

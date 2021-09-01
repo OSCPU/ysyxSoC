@@ -210,67 +210,67 @@ always @(posedge clk or posedge wb_rst_i) // synchronous FIFO
 begin
 	if (wb_rst_i)
 	begin
-		top		<= #1 'b0;
-		bottom		<= #1 'b0;
-		count		<= #1 'b0;
-		fifo[0] <= #1 0;
-		fifo[1] <= #1 0;
-		fifo[2] <= #1 0;
-		fifo[3] <= #1 0;
-		fifo[4] <= #1 0;
-		fifo[5] <= #1 0;
-		fifo[6] <= #1 0;
-		fifo[7] <= #1 0;
-		fifo[8] <= #1 0;
-		fifo[9] <= #1 0;
-		fifo[10] <= #1 0;
-		fifo[11] <= #1 0;
-		fifo[12] <= #1 0;
-		fifo[13] <= #1 0;
-		fifo[14] <= #1 0;
-		fifo[15] <= #1 0;
+		top		<=  'b0;
+		bottom		<=  'b0;
+		count		<=  'b0;
+		fifo[0] <=  0;
+		fifo[1] <=  0;
+		fifo[2] <=  0;
+		fifo[3] <=  0;
+		fifo[4] <=  0;
+		fifo[5] <=  0;
+		fifo[6] <=  0;
+		fifo[7] <=  0;
+		fifo[8] <=  0;
+		fifo[9] <=  0;
+		fifo[10] <=  0;
+		fifo[11] <=  0;
+		fifo[12] <=  0;
+		fifo[13] <=  0;
+		fifo[14] <=  0;
+		fifo[15] <=  0;
 	end
 	else
 	if (fifo_reset) begin
-		top		<= #1 'b0;
-		bottom		<= #1 'b0;
-		count		<= #1 'b0;
-		fifo[0] <= #1 0;
-		fifo[1] <= #1 0;
-		fifo[2] <= #1 0;
-		fifo[3] <= #1 0;
-		fifo[4] <= #1 0;
-		fifo[5] <= #1 0;
-		fifo[6] <= #1 0;
-		fifo[7] <= #1 0;
-		fifo[8] <= #1 0;
-		fifo[9] <= #1 0;
-		fifo[10] <= #1 0;
-		fifo[11] <= #1 0;
-		fifo[12] <= #1 0;
-		fifo[13] <= #1 0;
-		fifo[14] <= #1 0;
-		fifo[15] <= #1 0;
+		top		<=  'b0;
+		bottom		<=  'b0;
+		count		<=  'b0;
+		fifo[0] <=  0;
+		fifo[1] <=  0;
+		fifo[2] <=  0;
+		fifo[3] <=  0;
+		fifo[4] <=  0;
+		fifo[5] <=  0;
+		fifo[6] <=  0;
+		fifo[7] <=  0;
+		fifo[8] <=  0;
+		fifo[9] <=  0;
+		fifo[10] <=  0;
+		fifo[11] <=  0;
+		fifo[12] <=  0;
+		fifo[13] <=  0;
+		fifo[14] <=  0;
+		fifo[15] <=  0;
 	end
   else
 	begin
 		case ({push, pop})
 		2'b10 : if (count<fifo_depth)  // overrun condition
 			begin
-				top       <= #1 top_plus_1;
-				fifo[top] <= #1 data_in[2:0];
-				count     <= #1 count + 1'b1;
+				top       <=  top_plus_1;
+				fifo[top] <=  data_in[2:0];
+				count     <=  count + 1'b1;
 			end
 		2'b01 : if(count>0)
 			begin
-        fifo[bottom] <= #1 0;
-				bottom   <= #1 bottom + 1'b1;
-				count	 <= #1 count - 1'b1;
+        fifo[bottom] <=  0;
+				bottom   <=  bottom + 1'b1;
+				count	 <=  count - 1'b1;
 			end
 		2'b11 : begin
-				bottom   <= #1 bottom + 1'b1;
-				top       <= #1 top_plus_1;
-				fifo[top] <= #1 data_in[2:0];
+				bottom   <=  bottom + 1'b1;
+				top       <=  top_plus_1;
+				fifo[top] <=  data_in[2:0];
 		        end
     default: ;
 		endcase
@@ -280,13 +280,13 @@ end   // always
 always @(posedge clk or posedge wb_rst_i) // synchronous FIFO
 begin
   if (wb_rst_i)
-    overrun   <= #1 1'b0;
+    overrun   <=  1'b0;
   else
   if(fifo_reset | reset_status) 
-    overrun   <= #1 1'b0;
+    overrun   <=  1'b0;
   else
   if(push & ~pop & (count==fifo_depth))
-    overrun   <= #1 1'b1;
+    overrun   <=  1'b1;
 end   // always
 
 

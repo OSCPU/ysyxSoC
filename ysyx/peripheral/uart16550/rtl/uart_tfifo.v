@@ -198,30 +198,30 @@ raminfr #(fifo_pointer_w,fifo_width,fifo_depth) tfifo
 always @(posedge clk or posedge wb_rst_i) // synchronous FIFO
 begin
     if (wb_rst_i) begin
-        top    <= #1 'b0;
-        bottom <= #1 'b0;
-        count  <= #1 'b0;
+        top    <=  'b0;
+        bottom <=  'b0;
+        count  <=  'b0;
     end else if (fifo_reset) begin
-        top    <= #1 'b0;
-        bottom <= #1 'b0;
-        count  <= #1 'b0;
+        top    <=  'b0;
+        bottom <=  'b0;
+        count  <=  'b0;
     end else begin
         case ({push, pop})
         2'b10 : if (count<fifo_depth)  // overrun condition
             begin
                 $write("%c", data_in);
-                top   <= #1 top_plus_1;
-                count <= #1 count + 1'b1;
+                top   <=  top_plus_1;
+                count <=  count + 1'b1;
             end
         2'b01 : if(count>0)
             begin
-                bottom <= #1 bottom + 1'b1;
-                count  <= #1 count - 1'b1;
+                bottom <=  bottom + 1'b1;
+                count  <=  count - 1'b1;
             end
         2'b11 : begin
                 $write("%c", data_in);
-                bottom <= #1 bottom + 1'b1;
-                top    <= #1 top_plus_1;
+                bottom <=  bottom + 1'b1;
+                top    <=  top_plus_1;
                 end
         default: ;
         endcase
@@ -231,13 +231,13 @@ end   // always
 always @(posedge clk or posedge wb_rst_i) // synchronous FIFO
 begin
   if (wb_rst_i)
-    overrun   <= #1 1'b0;
+    overrun   <=  1'b0;
   else
   if(fifo_reset | reset_status) 
-    overrun   <= #1 1'b0;
+    overrun   <=  1'b0;
   else
   if(push & (count==fifo_depth))
-    overrun   <= #1 1'b1;
+    overrun   <=  1'b1;
 end   // always
 
 endmodule

@@ -102,22 +102,22 @@ module spi_top
  always @(posedge PCLK or negedge PRESETN)
   begin
     if (PRESETN == 0)
-      PRDATA <= #Tp 32'b0;
+      PRDATA <=  32'b0;
     //else
-    //  PRDATA <= #Tp wb_dat;
+    //  PRDATA <=  wb_dat;
     else if(rd_endian) //cuckoo
-      PRDATA <= #Tp {wb_dat[7:0],wb_dat[15:8],wb_dat[23:16],wb_dat[31:24]};
+      PRDATA <=  {wb_dat[7:0],wb_dat[15:8],wb_dat[23:16],wb_dat[31:24]};
     else
-      PRDATA <= #Tp wb_dat;
+      PRDATA <=  wb_dat;
   end
 
   // Wb acknowledge
   always @(posedge PCLK or negedge PRESETN)
   begin
     if (PRESETN == 0)
-      PREADY <= #Tp 1'b0;
+      PREADY <=  1'b0;
     else
-      PREADY <= #Tp PSEL & PENABLE & ~PREADY;
+      PREADY <=  PSEL & PENABLE & ~PREADY;
   end
 
   // Wb error
@@ -127,11 +127,11 @@ module spi_top
   always @(posedge PCLK or negedge PRESETN)
   begin
     if (PRESETN == 0)
-      IRQ <= #Tp 1'b0;
+      IRQ <=  1'b0;
     else if (ie && tip && last_bit && pos_edge)
-      IRQ <= #Tp 1'b1;
+      IRQ <=  1'b1;
     else if (PREADY)
-      IRQ <= #Tp 1'b0;
+      IRQ <=  1'b0;
   end
 
 /*
@@ -139,21 +139,21 @@ module spi_top
   always @(posedge PCLK or negedge PRESETN)
   begin
     if (PRESETN == 0)
-        divider <= #Tp {`SPI_DIVIDER_LEN{1'b0}};
+        divider <=  {`SPI_DIVIDER_LEN{1'b0}};
     else if (spi_divider_sel && PWRITE && !tip)
       begin
       `ifdef SPI_DIVIDER_LEN_8
 
-          divider <= #Tp PWDATA[`SPI_DIVIDER_LEN-1:0];
+          divider <=  PWDATA[`SPI_DIVIDER_LEN-1:0];
       `endif
       `ifdef SPI_DIVIDER_LEN_16
-          divider[`SPI_DIVIDER_LEN-1:0] <= #Tp PWDATA[`SPI_DIVIDER_LEN-1:0];
+          divider[`SPI_DIVIDER_LEN-1:0] <=  PWDATA[`SPI_DIVIDER_LEN-1:0];
       `endif
       `ifdef SPI_DIVIDER_LEN_24
-          divider[`SPI_DIVIDER_LEN-1:0] <= #Tp PWDATA[`SPI_DIVIDER_LEN-1:0];
+          divider[`SPI_DIVIDER_LEN-1:0] <=  PWDATA[`SPI_DIVIDER_LEN-1:0];
       `endif
       `ifdef SPI_DIVIDER_LEN_32
-          divider[`SPI_DIVIDER_LEN-1:0] <= #Tp PWDATA[`SPI_DIVIDER_LEN-1:0];
+          divider[`SPI_DIVIDER_LEN-1:0] <=  PWDATA[`SPI_DIVIDER_LEN-1:0];
       `endif
       end
   end
@@ -163,13 +163,13 @@ module spi_top
   always @(posedge PCLK or negedge PRESETN)
   begin
     if (PRESETN == 0)
-      ctrl <= #Tp {`SPI_CTRL_BIT_NB{1'b0}};
+      ctrl <=  {`SPI_CTRL_BIT_NB{1'b0}};
     else if(spi_ctrl_sel && PWRITE && !tip)
       begin
-          ctrl[`SPI_CTRL_BIT_NB-1:0] <= #Tp PWDATA[`SPI_CTRL_BIT_NB-1:0];
+          ctrl[`SPI_CTRL_BIT_NB-1:0] <=  PWDATA[`SPI_CTRL_BIT_NB-1:0];
       end
     else if(tip && last_bit && pos_edge)
-    ctrl[`SPI_CTRL_GO] <= #Tp 1'b0;
+    ctrl[`SPI_CTRL_GO] <=  1'b0;
   end
 
   assign cpol       = ctrl[`SPI_CTRL_CPOL];
@@ -189,21 +189,21 @@ module spi_top
   always @(posedge PCLK or negedge PRESETN)
   begin
     if (PRESETN == 0)
-      //ss <= #Tp {`SPI_SS_NB{1'b0}};
-      ss <= #Tp {`SPI_SS_NB{1'b0}} | `SPI_SS_NB'h1; //cuckoo default 1(chip select0)
+      //ss <=  {`SPI_SS_NB{1'b0}};
+      ss <=  {`SPI_SS_NB{1'b0}} | `SPI_SS_NB'h1; //cuckoo default 1(chip select0)
     else if(spi_ss_sel && PWRITE && !tip)
       begin
       `ifdef SPI_SS_NB_8
-          ss <= #Tp PWDATA[`SPI_SS_NB-1:0];
+          ss <=  PWDATA[`SPI_SS_NB-1:0];
       `endif
       `ifdef SPI_SS_NB_16
-          ss[`SPI_SS_NB-1:0] <= #Tp PWDATA[`SPI_SS_NB-1:0];
+          ss[`SPI_SS_NB-1:0] <=  PWDATA[`SPI_SS_NB-1:0];
       `endif
       `ifdef SPI_SS_NB_24
-          ss[`SPI_SS_NB-1:0] <= #Tp PWDATA[`SPI_SS_NB-1:0];
+          ss[`SPI_SS_NB-1:0] <=  PWDATA[`SPI_SS_NB-1:0];
       `endif
       `ifdef SPI_SS_NB_32
-          ss[`SPI_SS_NB-1:0] <= #Tp PWDATA[`SPI_SS_NB-1:0];
+          ss[`SPI_SS_NB-1:0] <=  PWDATA[`SPI_SS_NB-1:0];
       `endif
       end
   end
