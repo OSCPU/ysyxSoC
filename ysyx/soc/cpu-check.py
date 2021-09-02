@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #coding:utf-8
 import logging
-logging.basicConfig(level=logging.WARNING,filename='./log_cpuCheck.txt',filemode='w',format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s')# use logging
+logging.basicConfig(level=logging.WARNING,filename='./cpu-check.log',filemode='w',format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s')# use logging
 stuNum = input("Plase input your ID（1, 64, 128）:")
 stuNum = int(stuNum)
 print("Your file "+"ysyx_21"+str(stuNum).zfill(4)+".v"+" will be check\n")
