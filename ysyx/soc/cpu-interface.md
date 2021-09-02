@@ -43,8 +43,10 @@
 ## 命名规范自查脚本使用说明
 在处理器核所在目录下运行cpu-check.py脚本，会检测设计的.v文件是否符合命名规范，脚本会生成日志文件cpu-check.log。
 
+测试环境：`Debian10`, Ubuntu 20.04, WSL2-Ubuntu 20.04, Windows10
+
+
 ### 操作步骤
-测试环境：Debian10, Ubuntu 20.04, WSL2-Ubuntu 20.04, Windows10
 
 首先， 将脚本文件cpu-check.py移动到存放处理器核所在目录下，
 
@@ -54,7 +56,7 @@
 chmod +755 cpu-check.py
 ```
 
-然后，执行脚本，并按照提⽰输⼊学号，回⻋。
+然后，执行脚本，并按照提⽰输⼊学号，回⻋：
 
 ```shell
 python3 cpu-check.py
@@ -65,7 +67,7 @@ python3 cpu-check.py
 `学号不需要手动补0`
 
 ```
-#如果没有python3环境，也可以用Python2运行脚本，不过需要注意输入学号是不要手动补0
+#如果没有python3环境，也可以用Python2运行脚本，不过需要注意输入学号时不要手动补0
 python2 cpu-check.py
 ```
 
