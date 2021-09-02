@@ -15,14 +15,14 @@
  cat CPU.v ALU.v regs.v ... > ysyx_210888.v
  ```
 * [ ] 将CPU顶层命名修改为`ysyx_学号后六位.v`, 如`ysyx_210888`
-* [ ] 按照[CPU接口命名规范](./ysyx/soc/CPU-interface.md)修改CPU顶层端口名
+* [ ] 按照[CPU接口命名规范](./ysyx/soc/cpu-interface.md)修改CPU顶层端口名
 * [ ] 为CPU内的所有模块名添加前缀`ysyx_学号后六位`
  * 如`module ALU`修改为`module ysyx_210888_ALU`
  * Chisel福利: 我们提供一个[firrtl transform](./ysyx/module-prefix/AddModulePrefix.scala)
    来自动添加模块名前缀, 使用方法参考[相关说明文档](./ysyx/module-prefix/README.md)
 * 对于手动开发的Verilog代码, 目前无法进行模块名前缀的自动添加, 请手动进行添加
 * [ ] 运行[命名规范自查脚本](./ysyx/soc/cpu-check.py),
-  运行方法参考[这里](./ysyx/soc/CPU-interface.md#命名规范自查脚本使用说明)
+  运行方法参考[这里](./ysyx/soc/cpu-interface.md#命名规范自查脚本使用说明)
 
 ### CPU内部修改
 
