@@ -13,16 +13,9 @@
    ```
 1. 将`ysyxSoC/ysyx/peripheral`目录及其子目录下的所有`.v`文件加入verilator的Verilog文件列表
 1. 将`ysyxSoC/ysyx/soc/ysyxSoCFull.v`文件加入verilator的Verilog文件列表
+1. 将处理器Verilog文件加入verilator的Verilog文件列表
 1. 将`ysyxSoC/ysyx/peripheral/uart16550/rtl`和`ysyxSoC/ysyx/peripheral/spi/rtl`两个目录加入包含路径中
 1. 将`ysyxSoC/ysyx/peripheral/spiFlash/spiFlash.cpp`文件加入verilator的C++文件列表
-1. 实例化`ysyxSoCFull`模块(在`ysyxSoC/ysyx/soc/ysyxSoCFull.v`中定义),
-   并对该模块的以下端口进行连接:
-   * 输入正确的`clock`和`reset`
-   * 将`cpu_reset`连接到处理器的复位端
-   * 将`cpu_master_0_xxx`总线连接到处理器的AXI master接口
-   * 将`cpu_slave_xxx`总线连接到处理器的AXI slave接口
-   * 将`uart_rx`连接逻辑`1`, `uart_tx`可悬空
-   * 将`cpu_intr`连接到处理器的外部中断入口
 1. 将处理器的复位PC设置为`0x3000_0000`
 1. 在verilator编译选项中添加`--timescale "1ns/1ns"`
 1. 在verilator初始化时对flash进行初始化, 有以下两种方式:
@@ -30,6 +23,8 @@
      其中参数`img`是bin文件的路径, 在`ysyxSoC/ysyx/bin`目录下已经提供了一个hello示例
    * 调用`spiFlash.cpp`中的`flash_memcpy(src, len)`函数, 用于将已经读入内存的指令序列放置在flash中,
      其中参数`src`是指令序列的地址, `len`是指令序列的长度
+1. 将`ysyxSoCFull`模块(在`ysyxSoC/ysyx/soc/ysyxSoCFull.v`中定义)设置为verilator仿真的顶层
+1. 将`ysyxSoC/ysyx/soc/ysyxSoCFull.v`中的`ysyx_000000`模块名修改为自己的处理器模块名
 1. 通过verilator进行仿真即可
 
 ## 模块说明
@@ -93,6 +88,7 @@ ysyxSoC/src/main/scala/ysyx
 └── ysyx
     ├── AXI4ToAPB.scala            # AXI4-APB的转接桥, 不支持burst, 且只支持4字节以下的访问
     ├── ChipLinkBridge.scala       # ChipLink-AXI4的转接桥
+    ├── CPU.scala                  # CPU wrapper, 将会按照SoC接口规范实例化一个CPU实例
     ├── SoC.scala                  # SoC顶层
     ├── SPI.scala                  # SPI wrapper, 将会实例化verilog版本的SPI控制器
     └── Uart16550.scala            # UART16550 wrapper, 将会实例化verilog版本的UART16550控制器
@@ -133,7 +129,7 @@ ysyxSoC/src/main/scala/ysyx
 ## 注意事项
 
 **本项目中的SoC只用于在verilator中验证, 不参与流片环节!
-此外本项目与流片SoC环境仍然有少数不同, 
+此外本项目与流片SoC环境仍然有少数不同,
 在本项目中通过测试, 不代表也能通过流片SoC环境的测试.**
 具体地, 两者的不同之处包括:
 * 没有跨时钟域和异步桥
