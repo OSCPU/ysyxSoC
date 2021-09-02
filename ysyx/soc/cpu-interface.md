@@ -46,7 +46,7 @@
 ### 操作步骤
 测试环境：Debian10, Ubuntu 20.04, WSL2-Ubuntu 20.04, Windows10
 
-首先， 将脚本文件cpu-check.py移动到存放处理器核所在目录下：
+首先， 将脚本文件cpu-check.py移动到存放处理器核所在目录下，
 
 并在该目录下增加文件的执⾏权限：
 
@@ -54,7 +54,7 @@
 chmod +755 cpu-check.py
 ```
 
-然后，执行脚本，并按照提⽰输⼊学号，回⻋，如下图：
+然后，执行脚本，并按照提⽰输⼊学号，回⻋。
 
 ```shell
 python3 cpu-check.py
