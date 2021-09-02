@@ -55,15 +55,12 @@
 chmod +755 cpu-check.py
 ```
 
-![](https://github.com/AllenChenChao/ysyxSoC/blob/master/ysyx/soc/png/cpu-check/soc-cpu-check-02-%E8%84%9A%E6%9C%AC%E5%8A%A0%E6%89%A7%E8%A1%8C%E6%9D%83%E9%99%90.png?raw=true)
-
 然后，执行脚本，并按照提⽰输⼊学号，回⻋，如下图：
 
 ```shell
 python3 cpu-check.py
 ```
 
-![](https://github.com/AllenChenChao/ysyxSoC/blob/master/ysyx/soc/png/cpu-check/soc-cpu-check-03-%E8%BF%90%E8%A1%8C%E8%84%9A%E6%9C%AC.png?raw=true)
 
 最后，可以在终端看到检测结果，如果检查通过，如下图：
 
