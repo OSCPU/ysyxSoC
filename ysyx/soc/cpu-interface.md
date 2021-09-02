@@ -50,6 +50,7 @@
 ![](https://github.com/AllenChenChao/ysyxSoC/blob/master/ysyx/soc/png/cpu-check/soc-cpu-check-01-%E6%96%87%E4%BB%B6%E5%87%86%E5%A4%87.png?raw=true)
 
 并在该目录下增加文件的执⾏权限：
+
 '''
 chmod +755 cpu-check.py
 '''
@@ -57,6 +58,7 @@ chmod +755 cpu-check.py
 ![](https://github.com/AllenChenChao/ysyxSoC/blob/master/ysyx/soc/png/cpu-check/soc-cpu-check-02-%E8%84%9A%E6%9C%AC%E5%8A%A0%E6%89%A7%E8%A1%8C%E6%9D%83%E9%99%90.png?raw=true)
 
 然后，执行脚本，并按照提⽰输⼊学号，回⻋，如下图：
+
 '''
 python3 cpu-check.py
 '''
