@@ -49,6 +49,7 @@
 
 <img src="https://github.com/AllenChenChao/ysyxSoC/blob/master/ysyx/soc/png/cpu-check/soc-cpu-check-01-%E6%96%87%E4%BB%B6%E5%87%86%E5%A4%87.png" style="zoom:60%;" />
 
+![test image size](https://github.com/AllenChenChao/ysyxSoC/blob/master/ysyx/soc/png/cpu-check/soc-cpu-check-01-%E6%96%87%E4%BB%B6%E5%87%86%E5%A4%87.png){:height="50%" width="50%"}
 
 ![](https://github.com/AllenChenChao/ysyxSoC/blob/master/ysyx/soc/png/cpu-check/soc-cpu-check-01-%E6%96%87%E4%BB%B6%E5%87%86%E5%A4%87.png?raw=true)
 
