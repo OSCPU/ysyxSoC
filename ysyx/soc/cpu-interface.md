@@ -41,7 +41,7 @@
 | `input`  | `[3:0]`  | `io_master_rid`     | `output` | `[3:0]`  | `io_slave_rid`     |
 
 ## 命名规范自查脚本使用说明
-在处理器核目录下运行cpu-check.py脚本，会检测设计.v文件是否符合命名规范，脚本会生成日志文件cpu-check.log。
+在处理器核所在目录下运行cpu-check.py脚本，会检测设计的.v文件是否符合命名规范，脚本会生成日志文件cpu-check.log。
 
 ### 操作步骤
 
