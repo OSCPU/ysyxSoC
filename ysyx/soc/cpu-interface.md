@@ -59,6 +59,8 @@ chmod +755 cpu-check.py
 
 ```shell
 python3 cpu-check.py
+##推荐用python3而非python2运行脚本
+##学号不需要手动补0
 ```
 
 
