@@ -43,19 +43,25 @@
 ## 命名规范自查脚本使用说明
 在处理器核目录下运行cpu-check.py脚本，会检测设计.v文件是否符合命名规范，脚本会生成日志文件cpu-check.log。
 
-###操作步骤
+### 操作步骤
 
 首先， 将脚本文件cpu-check.py移动到存放处理器核所在目录下：
 ![](https://github.com/AllenChenChao/ysyxSoC/blob/master/ysyx/soc/png/cpu-check/soc-cpu-check-01-%E6%96%87%E4%BB%B6%E5%87%86%E5%A4%87.pngraw?=true)
+
 并在该目录下增加文件的执⾏权限：
 ![](https://github.com/AllenChenChao/ysyxSoC/blob/master/ysyx/soc/png/cpu-check/soc-cpu-check-02-%E8%84%9A%E6%9C%AC%E5%8A%A0%E6%89%A7%E8%A1%8C%E6%9D%83%E9%99%90.pngraw?=true)
+
 然后，执行脚本，并按照提⽰输⼊学号，回⻋，如下图：
 ![](https://github.com/AllenChenChao/ysyxSoC/blob/master/ysyx/soc/png/cpu-check/soc-cpu-check-03-%E8%BF%90%E8%A1%8C%E8%84%9A%E6%9C%AC.pngraw?=true)
+
 最后，可以在终端看到检测结果，如果检查通过，如下图：
 ![](https://github.com/AllenChenChao/ysyxSoC/blob/master/ysyx/soc/png/cpu-check/soc-cpu-check-04-%E8%BE%93%E5%85%A5%E5%AD%A6%E5%8F%B7%E5%9B%9E%E8%BD%A6-%E6%A3%80%E6%9F%A5%E9%80%9A%E8%BF%87%E4%BF%A1%E6%81%AF.pngraw?=true)
+
 同时，在该目录下会生成cpu-check.log的日志信息：
 ![](https://github.com/AllenChenChao/ysyxSoC/blob/master/ysyx/soc/png/cpu-check/soc-cpu-check-06-%E7%94%9F%E6%88%90log%E6%96%87%E4%BB%B6.pngraw?=true)
+
 终端检测未通过，会给出错误信息，如下图所示：
 ![](https://github.com/AllenChenChao/ysyxSoC/blob/master/ysyx/soc/png/cpu-check/soc-cpu-check-05-%E8%BE%93%E5%85%A5%E5%AD%A6%E5%8F%B7%E5%9B%9E%E8%BD%A6-%E6%A3%80%E6%9F%A5%E6%9C%AA%E9%80%9A%E8%BF%87%E6%8A%A5Error.pngraw?=true)
+
 可以打开⽬录下⽣成的log⽂件查看报错原因，如下图：
 ![](https://github.com/AllenChenChao/ysyxSoC/blob/master/ysyx/soc/png/cpu-check/soc-cpu-check-07-%E7%94%9F%E6%88%90log%E6%96%87%E4%BB%B6%E6%9F%A5%E7%9C%8B%E6%8A%A5%E9%94%99%E4%BF%A1%E6%81%AF.pngraw?=true)
