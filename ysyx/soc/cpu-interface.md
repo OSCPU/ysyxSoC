@@ -51,7 +51,7 @@
 
 并在该目录下增加文件的执⾏权限：
 
-'''shell
+'''python
 chmod +755 cpu-check.py
 '''
 
@@ -59,7 +59,7 @@ chmod +755 cpu-check.py
 
 然后，执行脚本，并按照提⽰输⼊学号，回⻋，如下图：
 
-'''shell
+'''python
 python3 cpu-check.py
 '''
 
