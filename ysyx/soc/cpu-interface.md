@@ -44,6 +44,7 @@
 在处理器核所在目录下运行cpu-check.py脚本，会检测设计的.v文件是否符合命名规范，脚本会生成日志文件cpu-check.log。
 
 ### 操作步骤
+测试环境：Debian10, Ubuntu 20.04, WSL2-Ubuntu 20.04
 
 首先， 将脚本文件cpu-check.py移动到存放处理器核所在目录下：
 
