@@ -47,7 +47,7 @@
 
 首先， 将脚本文件cpu-check.py移动到存放处理器核所在目录下：
 
-<img src="https://github.com/AllenChenChao/ysyxSoC/blob/master/ysyx/soc/png/cpu-check/soc-cpu-check-01-%E6%96%87%E4%BB%B6%E5%87%86%E5%A4%87.png" style="zoom:80%;" />
+<img src="https://github.com/AllenChenChao/ysyxSoC/blob/master/ysyx/soc/png/cpu-check/soc-cpu-check-01-%E6%96%87%E4%BB%B6%E5%87%86%E5%A4%87.png" style="zoom:60%;" />
 
 
 ![](https://github.com/AllenChenChao/ysyxSoC/blob/master/ysyx/soc/png/cpu-check/soc-cpu-check-01-%E6%96%87%E4%BB%B6%E5%87%86%E5%A4%87.png?raw=true)
