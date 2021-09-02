@@ -69,10 +69,9 @@ Your core is fine in module name and signal interface
 
 同时，在该目录下会生成日志文件cpu-check.log
 
-如果检测未通过，则会给出错误信息，如下图所示：
+如果检测未通过，则会给出错误信息，并提示是`module name`错误还是`signal interface`。
 
-![](https://github.com/AllenChenChao/ysyxSoC/blob/master/ysyx/soc/png/cpu-check/soc-cpu-check-05-%E8%BE%93%E5%85%A5%E5%AD%A6%E5%8F%B7%E5%9B%9E%E8%BD%A6-%E6%A3%80%E6%9F%A5%E6%9C%AA%E9%80%9A%E8%BF%87%E6%8A%A5Error.png?raw=true)
 
-也可以打开⽬录下⽣成的log⽂件查看报错原因，如下图：
+也可以打开⽬录下⽣成的cpu-check.log日志⽂件查看报错原因和提示，如下图：
 
 ![](https://github.com/AllenChenChao/ysyxSoC/blob/master/ysyx/soc/png/cpu-check/soc-cpu-check-07-%E7%94%9F%E6%88%90log%E6%96%87%E4%BB%B6%E6%9F%A5%E7%9C%8B%E6%8A%A5%E9%94%99%E4%BF%A1%E6%81%AF.png?raw=true)
