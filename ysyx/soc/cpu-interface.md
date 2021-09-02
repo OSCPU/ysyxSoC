@@ -62,27 +62,22 @@ chmod +755 cpu-check.py
 python3 cpu-check.py
 ```
 
-
 `推荐用python3而非python2运行脚本`
 
 `学号不需要手动补0`
-
 
 ```
 #如果没有python3环境，也可以用Python2运行脚本，不过需要注意输入学号时不要手动补0
 python2 cpu-check.py
 ```
 
-
 最后，可以在终端看到检测结果，如果检查通过，会在终端打印：
 ```shell
 Your core is fine in module name and signal interface
 ```
 
-
 同时，在该目录下会生成日志文件cpu-check.log
 
 如果检测未通过，则会给出错误信息，并提示是`module name`错误还是`signal interface`错误。
-
 
 也可以打开⽬录下⽣成的cpu-check.log日志⽂件查看报错原因和提示。
