@@ -5,27 +5,62 @@
 可在verilator中进行仿真, 用于在缺少商业EDA仿真环境的情况下,
 对处理器开展与流片仿真环境尽可能接近的验证工作.
 
-## 使用方法
+## SoC集成任务CheckList
 
-1. 通过以下命令克隆本项目
-   ```
-   git clone --depth 1 https://github.com/OSCPU/ysyxSoC.git
-   ```
-1. 将`ysyxSoC/ysyx/peripheral`目录及其子目录下的所有`.v`文件加入verilator的Verilog文件列表
-1. 将`ysyxSoC/ysyx/soc/ysyxSoCFull.v`文件加入verilator的Verilog文件列表
-1. 将处理器Verilog文件加入verilator的Verilog文件列表
-1. 将`ysyxSoC/ysyx/peripheral/uart16550/rtl`和`ysyxSoC/ysyx/peripheral/spi/rtl`两个目录加入包含路径中
-1. 将`ysyxSoC/ysyx/peripheral/spiFlash/spiFlash.cpp`文件加入verilator的C++文件列表
-1. 将处理器的复位PC设置为`0x3000_0000`
-1. 在verilator编译选项中添加`--timescale "1ns/1ns"`
-1. 在verilator初始化时对flash进行初始化, 有以下两种方式:
-   * 调用`spiFlash.cpp`中的`flash_init(img)`函数, 用于将bin文件中的指令序列放置在flash中,
-     其中参数`img`是bin文件的路径, 在`ysyxSoC/ysyx/bin`目录下已经提供了一个hello示例
-   * 调用`spiFlash.cpp`中的`flash_memcpy(src, len)`函数, 用于将已经读入内存的指令序列放置在flash中,
-     其中参数`src`是指令序列的地址, `len`是指令序列的长度
-1. 将`ysyxSoCFull`模块(在`ysyxSoC/ysyx/soc/ysyxSoCFull.v`中定义)设置为verilator仿真的顶层
-1. 将`ysyxSoC/ysyx/soc/ysyxSoCFull.v`中的`ysyx_000000`模块名修改为自己的处理器模块名
-1. 通过verilator进行仿真即可
+### 命名规范
+
+* [ ] 将CPU代码合并到一个`.v`文件, 文件名为`ysyx_学号后六位.v`, 如`ysyx_210888.v`
+ * 在Linux上可通过`cat`命令实现:
+ ```bash
+ cat CPU.v ALU.v regs.v ... > ysyx_210888.v
+ ```
+* [ ] 将CPU顶层命名修改为`ysyx_学号后六位.v`, 如`ysyx_210888`
+* [ ] 按照[CPU接口命名规范](./ysyx/soc/CPU-interface.md)修改CPU顶层端口名
+* [ ] 为CPU内的所有模块名添加前缀`ysyx_学号后六位`
+ * 如`module ALU`修改为`module ysyx_210888_ALU`
+ * Chisel福利: 我们提供一个[firrtl transform](./ysyx/module-prefix/AddModulePrefix.scala)
+   来自动添加模块名前缀, 使用方法参考[相关说明文档](./ysyx/module-prefix/README.md)
+* 对于手动开发的Verilog代码, 目前无法进行模块名前缀的自动添加, 请手动进行添加
+* [ ] 运行[命名规范自查脚本](./ysyx/soc/cpu-check.py),
+  运行方法参考[这里](./ysyx/soc/CPU-interface.md#命名规范自查脚本使用说明)
+
+### CPU内部修改
+
+* 若实现了cache, 则需要
+ * [ ] 确认ICache和DCache的data array的大小均不大于4KB
+ * [ ] 确认ICache和DCache的data array均采用单口RAM
+ * [ ] 对data array进行RAM替换: 我们提供一个[接口与流片用RAM一致的简化行为模型](./ysyx/ram/S011HD1P_X32Y2D128.v),
+   请对该模块进行实例化来实现data array, 端口说明见[这里](./ysyx/ram/README.md)
+* 若采用Verilog开发, 则需要
+ * [ ] 确认代码中的锁存器(Latch)已经去除
+    * Chisel福利: Chisel不会生成锁存器
+ * [ ] 确认代码中的异步复位寄存器是否已经去除, 或已经实现同步撤离
+    * Chisel福利: Chisel默认生成同步复位寄存器
+
+### Verilator仿真
+
+* [ ] 确认已经成功启动RT-Thread
+* [ ] 通过如下命令对代码进行规范检查, 清除报告的所有Warning
+  ```bash
+  verilator --lint-only -Wall -Wno-DECLFILENAME ysyx_210888.v
+  ```
+  若进行了RAM替换, 则需要在文件列表中额外添加RAM模型文件:
+  ```bash
+  verilator --lint-only -Wall -Wno-DECLFILENAME ysyx_210888.v ysyx/ram/S011HD1P_X32Y2D128.v
+  ```
+* [ ] 将CPU集成到本项目, 具体操作请参考[集成步骤说明](./ysyx/soc/soc.md)
+* 运行本项目提供的测试程序(位于`ysyx/bin/`目录下):
+  * [ ] hello-flash.bin
+  * [ ] memtest-flash.bin
+  * [ ] rtthread-flash.bin
+  * [ ] hello-loader.bin
+  * [ ] memtest-loader.bin
+  * [ ] rtthread-loader.bin
+
+### Yosys综合
+
+1. [ ] 通过Yosys综合CPU顶层, 清除报告的所有Warning
+  * 具体操作在后续开源EDA报告中介绍
 
 ## 模块说明
 
@@ -43,7 +78,12 @@
 ysyxSoC/ysyx
 ├── bin                            # 一些可运行的测试程序
 │   ├── hello-flash.bin
-│   └── hello-flash.elf
+│   ├── hello-flash.elf
+│   ├── memtest-flash.bin
+│   └── memtest-flash.elf
+├── module-prefix
+│   ├── AddModulePrefix.scala      # 为Chisel开发的模块名添加前缀的firrtl transform
+│   └── README.md                  # transform使用说明
 ├── peripheral
 │   ├── spi                        # SPI控制器
 │   │   ├── doc
@@ -73,10 +113,14 @@ ysyxSoC/ysyx
 │           ├── uart_tfifo.v
 │           └── uart_transmitter.v
 ├── ram
+│   ├── README.md                  # RAM接口说明
 │   └── S011HD1P_X32Y2D128.v       # 接口与流片用RAM一致的简化行为模型
 └── soc
+    ├── cpu-interface.md           # CPU接口规范说明和自查脚本使用说明
+    ├── cpu-check.py               # CPU命名规范自查脚本
     ├── Makefile                   # 用于将Chisel代码编译成ysyxSoCFull.v, 用户无需使用
-    └── ysyxSoCFull.v              # SoC的实现
+    ├── soc.md                     # SoC集成步骤说明
+    └── ysyxSoCFull.v              # SoC的Verilog实现
 ```
 
 ### chisel相关文件
@@ -113,18 +157,6 @@ ysyxSoC/src/main/scala/ysyx
 * CLINT模块位于处理器内部, SoC不提供, 需要大家自行实现
 * 若需要接入其它设备(如PLIC), 请在处理器内部接入,
   并将地址分配预留空间中, 避免与SoC的设备地址产生冲突
-
-## RAM替换
-
-我们提供了一个接口与流片用RAM一致的简化行为模型, 可用于RAM替换,
-具体步骤请参考[这里](./ysyx/ram/README.md).
-
-## 为Verilog文件中的模块名添加前缀
-
-对于Chisel生成的Verilog代码, 我们可以通过一个firrtl transform实现模块名前缀的添加,
-具体步骤请参考[这里](./ysyx/module-prefix/README.md).
-
-对于手动开发的Verilog代码, 目前没有统一的方法进行模块名前缀的自动添加, 请手动进行添加.
 
 ## 注意事项
 
