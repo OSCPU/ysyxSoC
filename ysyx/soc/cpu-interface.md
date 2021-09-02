@@ -47,8 +47,6 @@
 
 首先， 将脚本文件cpu-check.py移动到存放处理器核所在目录下：
 
-![](https://github.com/AllenChenChao/ysyxSoC/blob/master/ysyx/soc/png/cpu-check/soc-cpu-check-01-%E6%96%87%E4%BB%B6%E5%87%86%E5%A4%87.png?raw=true)
-
 并在该目录下增加文件的执⾏权限：
 
 ```shell
@@ -64,13 +62,12 @@ python3 cpu-check.py
 ```
 
 
-最后，可以在终端看到检测结果，如果检查通过，如下图：
+最后，可以在终端看到检测结果，如果检查通过，会在终端打印：
+```shell
+Your core is fine in module name and signal interface
+```
 
-![](https://github.com/AllenChenChao/ysyxSoC/blob/master/ysyx/soc/png/cpu-check/soc-cpu-check-04-%E8%BE%93%E5%85%A5%E5%AD%A6%E5%8F%B7%E5%9B%9E%E8%BD%A6-%E6%A3%80%E6%9F%A5%E9%80%9A%E8%BF%87%E4%BF%A1%E6%81%AF.png?raw=true)
-
-同时，在该目录下会生成cpu-check.log的日志信息：
-
-![](https://github.com/AllenChenChao/ysyxSoC/blob/master/ysyx/soc/png/cpu-check/soc-cpu-check-06-%E7%94%9F%E6%88%90log%E6%96%87%E4%BB%B6.png?raw=true)
+同时，在该目录下会生成日志文件cpu-check.log
 
 如果检测未通过，则会给出错误信息，如下图所示：
 
