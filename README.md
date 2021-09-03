@@ -34,20 +34,23 @@
 * 若采用Verilog开发, 则需要
  * [ ] 确认代码中的锁存器(Latch)已经去除
     * Chisel福利: Chisel不会生成锁存器
- * [ ] 确认代码中的异步复位寄存器是否已经去除, 或已经实现同步撤离
+ * [ ] 确认代码中的异步复位寄存器已经去除, 或已经实现同步撤离
     * Chisel福利: Chisel默认生成同步复位寄存器
 
 ### Verilator仿真
 
-* [ ] 确认已经成功启动RT-Thread
-* [ ] 通过如下命令对代码进行规范检查, 清除报告的所有Warning
-  ```bash
-  verilator --lint-only -Wall -Wno-DECLFILENAME ysyx_210888.v
-  ```
-  若进行了RAM替换, 则需要在文件列表中额外添加RAM模型文件:
-  ```bash
-  verilator --lint-only -Wall -Wno-DECLFILENAME ysyx_210888.v ysyx/ram/S011HD1P_X32Y2D128.v
-  ```
+* [ ] 对代码进行规范检查, 清除报告的Warning. 具体步骤如下:
+ * 清除`DECLFILENAME`和`UNUSED`之外的所有Warning,
+   Warning的含义可以参考[Verilator手册的说明](https://veripool.org/guide/latest/warnings.html#list-of-warnings):
+   ```bash
+   verilator --lint-only --top-module ysyx_210888 -Wall -Wno-DECLFILENAME -Wno-UNUSED ysyx_210888.v ysyx/ram/S011HD1P_X32Y2D128.v
+   ```
+ * 尽可能清除`UNUSED`的Warning:
+   ```bash
+   verilator --lint-only --top-module ysyx_210888 -Wall -Wno-DECLFILENAME ysyx_210888.v ysyx/ram/S011HD1P_X32Y2D128.v
+   ```
+ * 若某些`UNUSED`的Warning不方便清除, 需要填写xxx表格并给出原因
+* [ ] 确认清除Warning后的代码可以成功启动RT-Thread
 * [ ] 将CPU集成到本项目, 具体操作请参考[集成步骤说明](./ysyx/soc/soc.md)
 * 运行本项目提供的测试程序(位于`ysyx/bin/`目录下):
   * [ ] hello-flash.bin
