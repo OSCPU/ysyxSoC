@@ -80,7 +80,7 @@
 
 ## 相关文件介绍
 
-### Verilog相关文件
+### SoC集成流程相关文件
 
 ```
 ysyxSoC/ysyx
@@ -135,7 +135,7 @@ ysyxSoC/ysyx
     └── ysyxSoCFull.v              # SoC的Verilog实现
 ```
 
-### chisel相关文件
+### SoC的Chisel实现相关文件
 
 ```
 ysyxSoC/src/main/scala/ysyx
