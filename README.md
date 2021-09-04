@@ -49,7 +49,7 @@
    ```bash
    verilator --lint-only --top-module ysyx_210888 -Wall -Wno-DECLFILENAME ysyx_210888.v ysyx/ram/S011HD1P_X32Y2D128.v
    ```
- * 若某些`UNUSED`的Warning不方便清除, 需要填写xxx表格并给出原因
+ * 若某些`UNUSED`的Warning不方便清除, 需要填写表格[Verilator中Warning无法清理说明.xlsx](./ysyx/doc/Verilator中Warning无法清理说明.xlsx)并给出原因, 用于向SoC团队和后端设计团队参考
 * [ ] 确认清除Warning后的代码可以成功启动RT-Thread
 * [ ] 将CPU集成到本项目, 具体操作请参考[集成步骤说明](./ysyx/soc/soc.md)
 * 运行本项目提供的测试程序(位于`ysyx/bin/`目录下):
@@ -62,8 +62,17 @@
 
 ### Yosys综合
 
-1. [ ] 通过Yosys综合CPU顶层, 清除报告的所有Warning
+* [ ] 通过Yosys综合CPU顶层, 清除报告的所有Warning
   * 具体操作在后续开源EDA报告中介绍
+
+### 提交
+
+* 准备以下内容:
+  * [ ] 一份CPU的.v文件, 注意无需包含RAM的行为模型
+  * [ ] 记录无法清理的Verilator Warning的表格
+  * [ ] 一份带数据流向的处理器架构图, 用于供后端团队进行FloorPlan时参考
+
+提交方式后续发布.
 
 ## 模块说明
 
