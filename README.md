@@ -5,6 +5,12 @@
 可在verilator中进行仿真, 用于在缺少商业EDA仿真环境的情况下,
 对处理器开展与流片仿真环境尽可能接近的验证工作.
 
+## 相关讲座
+
+视频回看和讲座PDF文件请见[这里](https://oscpu.github.io/ysyx/events/events.html?EID=2021-09-01_SoC_Arch_And_Spec).
+
+注意: 若视频和PDF文件中的说法与本项目说明不一致, 以本项目说明为准.
+
 ## SoC集成任务CheckList
 
 ### 命名规范
