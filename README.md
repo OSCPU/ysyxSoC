@@ -45,17 +45,7 @@
 
 ### Verilator仿真
 
-* [ ] 对代码进行规范检查, 清除报告的Warning. 具体步骤如下:
- * 清除`DECLFILENAME`和`UNUSED`之外的所有Warning,
-   Warning的含义可以参考[Verilator手册的说明](https://veripool.org/guide/latest/warnings.html#list-of-warnings):
-   ```bash
-   verilator --lint-only --top-module ysyx_210888 -Wall -Wno-DECLFILENAME -Wno-UNUSED ysyx_210888.v ysyx/ram/S011HD1P_X32Y2D128.v
-   ```
- * 尽可能清除`UNUSED`的Warning:
-   ```bash
-   verilator --lint-only --top-module ysyx_210888 -Wall -Wno-DECLFILENAME ysyx_210888.v ysyx/ram/S011HD1P_X32Y2D128.v
-   ```
- * 若某些`UNUSED`的Warning不方便清除, 需要填写表格[Verilator中Warning无法清理说明.xlsx](./ysyx/doc/Verilator中Warning无法清理说明.xlsx)并给出原因, 用于向SoC团队和后端设计团队参考
+* [ ] 对代码进行规范检查, 清除报告的Warning. 具体步骤请参考[这里](./ysyx/lint/README.md)
 * [ ] 确认清除Warning后的代码可以成功启动RT-Thread
 * [ ] 将CPU集成到本项目, 具体操作请参考[集成步骤说明](./ysyx/soc/soc.md)
 * 运行本项目提供的测试程序(位于`ysyx/bin/`目录下):
@@ -99,6 +89,10 @@ ysyxSoC/ysyx
 │   ├── hello-flash.elf
 │   ├── memtest-flash.bin
 │   └── memtest-flash.elf
+├── lint
+│   ├── Makefile                   # 代码规范检查脚本
+│   ├── README.md                  # 代码规范检查步骤说明
+│   └── Verilator中Warning无法清理说明.xlsx
 ├── module-prefix
 │   ├── AddModulePrefix.scala      # 为Chisel开发的模块名添加前缀的firrtl transform
 │   └── README.md                  # transform使用说明
