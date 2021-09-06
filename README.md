@@ -32,6 +32,7 @@
 
 ### CPU内部修改
 
+* [ ] 所有触发器都需要带复位端, 使其复位后带初值
 * 若实现了cache, 则需要
  * [ ] 确认ICache和DCache的data array的大小均不大于4KB
  * [ ] 确认ICache和DCache的data array均采用单口RAM
@@ -40,8 +41,8 @@
 * 若采用Verilog开发, 则需要
  * [ ] 确认代码中的锁存器(Latch)已经去除
     * Chisel福利: Chisel不会生成锁存器
- * [ ] 确认代码中的异步复位寄存器已经去除, 或已经实现同步撤离
-    * Chisel福利: Chisel默认生成同步复位寄存器
+ * [ ] 确认代码中的异步复位触发器已经去除, 或已经实现同步撤离
+    * Chisel福利: Chisel默认生成同步复位触发器
 
 ### Verilator仿真
 
@@ -57,11 +58,6 @@
   * [ ] rtthread-loader.bin
 * [ ] 若为了正确运行测试程序而修改了设计, 需要重新进行代码规范检查,
       并更新记录Warning的表格文件中报告Warning的代码位置
-
-### Yosys综合
-
-* [ ] 通过Yosys综合CPU顶层, 清除报告的所有Warning
-  * 具体操作在后续开源EDA报告中介绍
 
 ### 提交
 
