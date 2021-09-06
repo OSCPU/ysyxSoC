@@ -4,7 +4,7 @@
 1. 在生成verilog的源文件中添加`import yourpackage._`
 1. 在`ChiselStage.execute`方法的第二个参数`AnnotationSeq`中加入两个元素:
 ```scala
-firrtl.state.RunFirrtlTransformAnnotation(new AddModulePrefix())
+firrtl.stage.RunFirrtlTransformAnnotation(new AddModulePrefix())
 ModulePrefixAnnotation("yourprefix")
 ```
   例如, 若使用`https://github.com/OpenXiangShan/chisel-playground`项目作为模板, 可进行如下修改:
@@ -17,7 +17,7 @@ ModulePrefixAnnotation("yourprefix")
 -  (new chisel3.stage.ChiselStage).execute(args, Seq(chisel3.stage.ChiselGeneratorAnnotation(() => new GCD())))
 +  (new chisel3.stage.ChiselStage).execute(args, Seq(
 +    chisel3.stage.ChiselGeneratorAnnotation(() => new GCD()),
-+    firrtl.state.RunFirrtlTransformAnnotation(new AddModulePrefix()),
++    firrtl.stage.RunFirrtlTransformAnnotation(new AddModulePrefix()),
 +    ModulePrefixAnnotation("ysyx_000000_")
 +  ))
  }
