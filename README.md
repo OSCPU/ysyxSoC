@@ -55,6 +55,8 @@
   * [ ] hello-loader.bin
   * [ ] memtest-loader.bin
   * [ ] rtthread-loader.bin
+* [ ] 若为了正确运行测试程序而修改了设计, 需要重新进行代码规范检查,
+      并更新记录Warning的表格文件中报告Warning的代码位置
 
 ### Yosys综合
 
