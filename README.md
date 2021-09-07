@@ -36,8 +36,10 @@
 * 若实现了cache, 则需要
  * [ ] 确认ICache和DCache的data array的大小均不大于4KB
  * [ ] 确认ICache和DCache的data array均采用单口RAM
- * [ ] 对data array进行RAM替换: 我们提供一个[接口与流片用RAM一致的简化行为模型](./ysyx/ram/S011HD1P_X32Y2D128.v),
-   请对该模块进行实例化来实现data array(tag array无需替换), 端口说明见[这里](./ysyx/ram/README.md)
+ * [ ] 对data array进行RAM替换: 我们提供接口与流片用RAM一致的简化行为模型,
+   可按需选用[带写掩码的模型](./ysyx/ram/S011HD1P_X32Y2D128_BW.v)或
+   [不带写掩码的模型](./ysyx/ram/S011HD1P_X32Y2D128.v),
+   请对RAM模块进行实例化来实现data array(tag array无需替换), 端口说明见[这里](./ysyx/ram/README.md)
 * 若采用Verilog开发, 则需要
  * [ ] 确认代码中的锁存器(Latch)已经去除
     * Chisel福利: Chisel不会生成锁存器
@@ -124,7 +126,8 @@ ysyxSoC/ysyx
 │           └── uart_transmitter.v
 ├── ram
 │   ├── README.md                  # RAM接口说明
-│   └── S011HD1P_X32Y2D128.v       # 接口与流片用RAM一致的简化行为模型
+│   ├── S011HD1P_X32Y2D128_BW.v    # 接口与流片用RAM一致的简化行为模型(带写掩码)
+│   └── S011HD1P_X32Y2D128.v       # 接口与流片用RAM一致的简化行为模型(不带写掩码)
 └── soc
     ├── cpu-interface.md           # CPU接口规范说明和自查脚本使用说明
     ├── cpu-check.py               # CPU命名规范自查脚本
