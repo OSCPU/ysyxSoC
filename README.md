@@ -51,28 +51,13 @@
 * [ ] 对代码进行规范检查, 清除报告的Warning. 具体步骤请参考[这里](./ysyx/lint/README.md)
 * [ ] 确认清除Warning后的代码可以成功启动RT-Thread
 * [ ] 将CPU集成到本项目, 具体操作请参考[集成步骤说明](./ysyx/soc/soc.md)
-* 运行本项目提供的测试程序(位于`ysyx/bin/`目录下):
-  * 直接在flash上运行的程序
-    * [ ] hello-flash.bin, 运行指令总数为186, 参考输出如下:
-    ```
-    Hello RISC-V
-    ```
-    * [ ] memtest-flash.bin, 运行指令总数为37471, 参考输出如下:
-    ```
-    START TEST...ALL DATA PREPARED
-    ALL TESTS PASSED!!
-    ```
-    * [ ] rtthread-flash.bin, 运行指令总数约为150000, 参考输出如下:
-    ```
-     \ | /
-    - RT -     Thread Operating System
-     / | \     4.0.4 build Aug 31 2021
-     2006 - 2021 Copyright by rt-thread team
-    Hello RISC-V!
-    msh />
-    ```
-  * 通过loader把程序加载到memory, 然后跳转运行.
-    注意需要额外实现`fence.i`指令, 若未实现cache, 只需将该指令实现成空指令即可
+* 运行本项目提供的测试程序, 详细信息可参考[这里](./ysyx/program/README.md)
+  * 直接在flash上运行的程序(位于`ysyx/program/bin/flash`目录下):
+    * [ ] hello-flash.bin
+    * [ ] memtest-flash.bin
+    * [ ] rtthread-flash.bin
+  * 通过loader把程序加载到memory, 然后跳转运行(位于`ysyx/program/bin/loader`目录下).
+    注意需要额外实现`fence.i`指令, 若未实现cache, 只需将该指令实现成`nop`即可
     * [ ] hello-loader.bin
     * [ ] memtest-loader.bin
     * [ ] rtthread-loader.bin
@@ -102,16 +87,11 @@
 
 ```
 ysyxSoC/ysyx
-├── bin                            # 一些可运行的测试程序
-│   ├── hello-flash.bin
-│   ├── hello-flash.elf
-│   ├── memtest-flash.bin
-│   └── memtest-flash.elf
+├── program                        # 一些测试程序
 ├── lint
 │   ├── Makefile                   # 代码规范检查脚本
 │   ├── README.md                  # 代码规范检查步骤说明
 │   └── Verilator中Warning无法清理说明.xlsx
-├── loader                         # loader参考实现, 仅供参考, 用户无需自行编译
 ├── module-prefix
 │   ├── AddModulePrefix.scala      # 为Chisel开发的模块名添加前缀的firrtl transform
 │   └── README.md                  # transform使用说明
