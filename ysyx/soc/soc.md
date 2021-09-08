@@ -9,6 +9,7 @@
 1. 将`ysyxSoC/ysyx/soc/ysyxSoCFull.v`文件加入verilator的Verilog文件列表
 1. 将处理器Verilog文件加入verilator的Verilog文件列表
 1. 将`ysyxSoC/ysyx/peripheral/uart16550/rtl`和`ysyxSoC/ysyx/peripheral/spi/rtl`两个目录加入包含路径中
+   (使用verilator的`-I`选项)
 1. 将`ysyxSoC/ysyx/peripheral/spiFlash/spiFlash.cpp`文件加入verilator的C++文件列表
 1. 将处理器的复位PC设置为`0x3000_0000`
 1. 在verilator编译选项中添加`--timescale "1ns/1ns"`
