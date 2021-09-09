@@ -12,7 +12,7 @@ int main(){
     }
     putstr("ALL DATA PREPARED\n");
     for(int i = 0; i < ARR_SIZE / sizeof(uint16_t); i++){
-        assert(data[i] == i);
+        panic_on(data[i] != i, "");
     }
     putstr("ALL TESTS PASSED!!\n");
     return 0;
