@@ -15,7 +15,8 @@
 1. 在verilator编译选项中添加`--timescale "1ns/1ns"`
 1. 在verilator初始化时对flash进行初始化, 有以下两种方式:
    * 调用`spiFlash.cpp`中的`flash_init(img)`函数, 用于将bin文件中的指令序列放置在flash中,
-     其中参数`img`是bin文件的路径, 在`ysyxSoC/ysyx/bin`目录下已经提供了一个hello示例
+     其中参数`img`是bin文件的路径, 在`ysyxSoC/ysyx/program/bin/flash`和
+     `ysyxSoC/ysyx/program/bin/loader`目录下提供了一些示例
    * 调用`spiFlash.cpp`中的`flash_memcpy(src, len)`函数, 用于将已经读入内存的指令序列放置在flash中,
      其中参数`src`是指令序列的地址, `len`是指令序列的长度
 1. 将`ysyxSoCFull`模块(在`ysyxSoC/ysyx/soc/ysyxSoCFull.v`中定义)设置为verilator仿真的顶层
