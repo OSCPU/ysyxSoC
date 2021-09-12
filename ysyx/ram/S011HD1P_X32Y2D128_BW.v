@@ -16,7 +16,7 @@ input [Bits-1:0]      D;
 
 wire cen  = ~CEN;
 wire wen  = ~WEN;
-wire bwen = ~BWEN;
+wire [Wen_Width-1:0] bwen = ~BWEN;
 
 reg [Bits-1:0] ram [0:Word_Depth-1];
 always @(posedge CLK) begin
