@@ -2,7 +2,7 @@
 #coding:utf-8
 import logging
 logging.basicConfig(level=logging.WARNING,filename='./cpu-check.log',filemode='w',format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s')# use logging
-stuNum = input("Please input your ID:")
+stuNum = input("Please input your ID (such as 888) :")
 stuNum = int(stuNum)
 print("Your file "+"ysyx_21"+str(stuNum).zfill(4)+".v"+" will be check\n")
 
