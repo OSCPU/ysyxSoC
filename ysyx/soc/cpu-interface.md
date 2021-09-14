@@ -62,7 +62,7 @@ chmod +755 cpu-check.py
 python3 cpu-check.py
 ```
 
-`推荐用python3而非python2运行脚本`
+推荐用`python3`而非`python2`运行脚本
 
 学号不需要手动补`0`，例如学号是`888`的同学，直接按照脚本提示输入`888`即可
 
