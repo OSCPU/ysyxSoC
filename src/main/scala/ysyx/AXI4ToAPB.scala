@@ -69,7 +69,9 @@ class AXI4ToAPB(val aFlow: Boolean = true)(implicit p: Parameters) extends LazyM
 
       val ar_enable = RegInit(false.B)
       val aw_enable = RegInit(false.B)
-      val ar_sel    = ar.valid && RegNext(!in.r.valid || in.r.ready)
+      // read can not preempt write
+      val ar_sel    = ar.valid && !aw_enable && RegNext(!in.r.valid || in.r.ready)
+      // read has higher priority than write in the same cycle
       val aw_sel    = aw.valid && w.valid && !ar_sel && RegNext(!in.b.valid || in.b.ready)
 
       val enable_r = ar_sel && !ar_enable
