@@ -1,3 +1,7 @@
+// define this macro to enable fast behavior simulation
+// for flash by skipping SPI transfers
+//`define FAST_FLASH
+
 module spi_top_apb #(
   parameter flash_addr_start = 32'h30000000,
   parameter flash_addr_end   = 32'h3fffffff,
@@ -23,6 +27,26 @@ module spi_top_apb #(
   output                  spi_irq_out
 );
 
+`ifdef FAST_FLASH
+
+wire [31:0] data;
+parameter invalid_cmd = 8'h0;
+flash_cmd flash_cmd_i(
+  .clock(clk),
+  .valid(in_psel && !in_penable),
+  .cmd(in_pwrite ? invalid_cmd : 8'h03),
+  .addr({8'b0, in_paddr[23:2], 2'b0}),
+  .data(data)
+);
+assign spi_sck    = 1'b0;
+assign spi_ss     = 2'b0;
+assign spi_mosi   = 1'b1;
+assign in_pslverr = 1'b0;
+assign in_pready  = in_penable && in_psel && !in_pwrite;
+assign in_prdata  = data[31:0];
+
+`else
+
 wire [7:0] ss_pad_o;
 assign spi_ss = ss_pad_o[spi_ss_num-1:0];
 
@@ -45,5 +69,7 @@ spi_top u0_spi_top (
   .mosi_pad_o(spi_mosi),
   .miso_pad_i(spi_miso)
 );
+
+`endif // FAST_FLASH
 
 endmodule
