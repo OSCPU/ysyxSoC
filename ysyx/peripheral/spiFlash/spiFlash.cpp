@@ -44,6 +44,6 @@ extern "C" void flash_init(char *img) {
   fclose(fp);
 }
 
-extern "C" void flash_memcpy(uint8_t* src, size_t len){
+extern "C" void flash_memcpy(uint8_t* src, size_t len) {
   memcpy(flash, src, len);
 }

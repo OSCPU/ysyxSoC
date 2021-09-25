@@ -1,10 +1,14 @@
 `include "amba_define.v"
 
+// define this macro to enable fast behavior simulation
+// for flash by skipping SPI transfers
+//`define FAST_FLASH
+
 `define SPI_CTL_DIV_4         32'h00010000 //23:16 (divide by 4)
 `define SPI_CTL_DIV_2         32'h00000000 //23:16 (divide by 2)
 
 `define SPI_CTL_SS            32'h01000000 //31:24
-`define SPI_CTL_DIV           32'h00010000 //23:16 (divide by 4)
+`define SPI_CTL_DIV           `SPI_CTL_DIV_2
 `define SPI_CTL_CPOL          32'h00008000 //cuckoo(clock polar)
 `define SPI_CTL_RD_ENDIAN     32'h00004000 //14
 `define SPI_CTL_ASS           32'h00002000 //13
@@ -56,6 +60,32 @@ parameter   spi_cs_num       = 2
   input                      spi_miso,
   output                     spi_irq_out
 );
+
+`ifdef FAST_FLASH
+  wire [63:0] data;
+  wire ren = in_psel && !in_pwrite;
+  wire wen = in_penable && in_psel &&  in_pwrite;
+  FlashRead flashRead (
+    .clock(clk),
+    .ren(ren),
+    .addr({36'b0, in_paddr[27:2], 2'b0}),
+    .data(data)
+  );
+  assign spi_clk    = 1'b0;
+  assign spi_cs     = 2'b0;
+  assign spi_mosi   = 1'b1;
+  assign in_pslverr = 1'b0;
+  assign in_pready  = in_penable && ren;
+  assign in_prdata  = data[31:0];
+
+  always @(posedge clk) begin
+    if (wen) begin
+      $fwrite(32'h80000002, "Assertion failed: only support flash reading. \n");
+      $fatal;
+    end
+  end
+
+`else
 
 wire  [`P_ADDR_W-1:0]    paddr_spi;
 wire                     psel_spi;
@@ -256,5 +286,7 @@ spi_top u0_spi_top
   .miso_pad_i(spi_miso),
   .IRQ(spi_irq)
 );
+
+`endif // FAST_FLASH
 
 endmodule
