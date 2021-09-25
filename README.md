@@ -54,7 +54,14 @@
 
 * [ ] 确认清除Warning后的代码可以成功启动RT-Thread
 * [ ] 将CPU集成到本项目, 具体操作请参考[集成步骤说明](./ysyx/soc/soc.md)
-* 运行本项目提供的测试程序, 详细信息可参考[这里](./ysyx/program/README.md)
+* 通过快速模式(跳过SPI传输, 不可综合, 适合快速调试和迭代)对flash进行模拟,
+  运行本项目提供的测试程序, 详细信息可参考[这里](./ysyx/program/README.md).
+  为了打开flash的快速模式, 你需要在`ysyx/peripheral/spi/rtl/spi.v`的开头定义宏`FAST_FLASH`:
+  ```verilog
+  // define this macro to enable fast behavior simulation
+  // for flash by skipping SPI transfers
+  `define FAST_FLASH
+  ```
   * 直接在flash上运行的程序(位于`ysyx/program/bin/flash`目录下):
     * [ ] hello-flash.bin
     * [ ] memtest-flash.bin
@@ -64,6 +71,19 @@
     * [ ] hello-loader.bin
     * [ ] memtest-loader.bin
     * [ ] rtthread-loader.bin
+* 通过正常模式(不跳过SPI传输, 仿真速度慢, 用于最终的系统测试)对flash进行模拟,
+  重新运行上述测试程序. 你需要在`ysyx/peripheral/spi/rtl/spi.v`的开头取消对宏`FAST_FLASH`的定义:
+  ```verilog
+  // define this macro to enable fast behavior simulation
+  // for flash by skipping SPI transfers
+  // `define FAST_FLASH
+  ```
+  * [ ] hello-flash.bin
+  * [ ] memtest-flash.bin
+  * [ ] rtthread-flash.bin
+  * [ ] hello-loader.bin
+  * [ ] memtest-loader.bin
+  * [ ] rtthread-loader.bin
 * [ ] 若为了正确运行测试程序而修改了设计, 需要重新进行代码规范检查,
       并更新记录Warning的表格文件中报告Warning的代码位置
 
