@@ -8,7 +8,7 @@
 | CPU内部模块名 | | `ysyx_学号后六位_模块名` | 如`ysyx_210000_ALU` |
 | 时钟 | input | `clock` |
 | 复位(高电平有效) | input | `reset` |
-| 中断 | input | `io_interrupt` |
+| 外部中断 | input | `io_interrupt` |
 | AXI4 Master总线 |   |                     | AXI4 Slave总线 |    |                    |
 | `input`  |          | `io_master_awready` | `output` |          | `io_slave_awready` |
 | `output` |          | `io_master_awvalid` | `input`  |          | `io_slave_awvalid` |
