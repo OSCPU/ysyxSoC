@@ -44,21 +44,24 @@ class AXI4ToAPB(val aFlow: Boolean = true)(implicit p: Parameters) extends LazyM
 
   lazy val module = new LazyModuleImp(this) {
     (node.in zip node.out) foreach { case ((in, edgeIn), (out, edgeOut)) =>
-      // We need a skidpad to capture D output:
-      // We cannot know if the D response will be accepted until we have
-      // presented it on D as valid.  We also can't back-pressure APB in the
-      // data phase.  Therefore, we must have enough space to save the data
-      // phase result.  Whenever we have a queued response, we can not allow
-      // APB to present new responses, so we must quash the address phase.
-      val r = WireInit(in.r)
-      in.r <> Queue(r, 1, flow = true)
-      val b = WireInit(in.b)
-      in.b <> Queue(b, 1, flow = true)
+      val (ar, r, aw, w, b) = (in.ar, in.r, in.aw, in.w, in.b)
 
-      // We need an irrevocable input for APB to stall
-      val ar = Queue(in.ar, 1, flow = aFlow, pipe = !aFlow)
-      val aw = Queue(in.aw, 1, flow = aFlow, pipe = !aFlow)
-      val w  = Queue(in.w , 1, flow = aFlow, pipe = !aFlow)
+      val s_idle :: s_ar :: s_r :: s_aw :: s_w :: s_b :: Nil = Enum(6)
+      val state = RegInit(s_idle)
+      switch (state) {
+        is (s_idle) { state := Mux(ar.valid, s_ar, Mux(aw.valid, s_aw, s_idle)) }
+        is (s_ar)   { state := s_r }
+        is (s_r)    { when (r.ready && out.pready) { state := s_idle } }
+        is (s_aw)   { when (w.valid) { state := s_w } }
+        is (s_w)    { when (out.pready) { state := s_b } }
+        is (s_b)    { when (b.ready) { state := s_idle } }
+      }
+      val is_ar = (state === s_ar)
+      val is_r  = (state === s_r)
+      val is_aw = (state === s_aw)
+      val is_w  = (state === s_w)
+      val is_b  = (state === s_b)
+      val is_write = is_aw || is_w || is_b
 
       // burst is not supported
       assert(!(ar.valid && ar.bits.len =/= 0.U))
@@ -67,53 +70,34 @@ class AXI4ToAPB(val aFlow: Boolean = true)(implicit p: Parameters) extends LazyM
       assert(!(ar.valid && ar.bits.size > "b10".U))
       assert(!(aw.valid && aw.bits.size > "b10".U))
 
-      val ar_enable = RegInit(false.B)
-      val aw_enable = RegInit(false.B)
-      // read can not preempt write
-      val ar_sel    = ar.valid && !aw_enable && RegNext(!in.r.valid || in.r.ready)
-      // read has higher priority than write in the same cycle
-      val aw_sel    = aw.valid && w.valid && !ar_sel && RegNext(!in.b.valid || in.b.ready)
+      val rid_reg    = RegEnable(ar.bits.id, ar.fire())
+      val bid_reg    = RegEnable(aw.bits.id, aw.fire())
+      val araddr_reg = RegEnable(ar.bits.addr, ar.fire())
+      val awaddr_reg = RegEnable(aw.bits.addr, aw.fire())
+      val wdata_reg  = RegEnable(w.bits.data, w.fire())
+      val wstrb_reg  = RegEnable(w.bits.strb, w.fire())
 
-      val enable_r = ar_sel && !ar_enable
-      val r_id     = RegEnable(ar.bits.id, enable_r)
-      val enable_b = aw_sel && !aw_enable
-      val b_id     = RegEnable(aw.bits.id, enable_b)
-
-      when (ar_sel)   { ar_enable := true.B }
-      when (r.fire()) { ar_enable := false.B }
-      when (aw_sel)   { aw_enable := true.B }
-      when (b.fire()) { aw_enable := false.B }
-
-      val araddr = ar.bits.addr
-      val awaddr = aw.bits.addr
-      val wdata  = w.bits.data
-      val wstrb  = w.bits.strb
-
-      out.psel    := ar_sel || aw_sel
-      out.penable := ar_enable || aw_enable
-      out.pwrite  := aw_sel
-      out.paddr   := Mux(ar_sel, araddr, awaddr)
+      out.psel    := is_r || is_w
+      out.penable := out.psel && RegNext(out.psel)
+      out.pwrite  := is_write
+      out.paddr   := Mux(is_write, awaddr_reg, araddr_reg)
       out.pprot   := APBParameters.PROT_DEFAULT
-      out.pwdata  := Mux(awaddr(2), wdata(63,32), wdata(31,0))
-      out.pstrb   := Mux(ar_sel, 0.U, Mux(awaddr(2), wstrb(7,4), wstrb(3,0)))
+      out.pwdata  := Mux(awaddr_reg(2), wdata_reg(63,32), wdata_reg(31,0))
+      out.pstrb   := Mux(is_write, Mux(awaddr_reg(2), wstrb_reg(7,4), wstrb_reg(3,0)), 0.U)
 
-      ar.ready := ar_enable && out.pready
-      r.valid  := ar_enable && out.pready
-      assert (!r.valid || r.ready)
+      ar.ready := is_ar
+      aw.ready := is_aw && !RegNext(is_aw)
+      w.ready  := is_w  && !RegNext(is_w)
 
-      aw.ready := aw_enable && out.pready
-      w.ready  := aw_enable && out.pready
-      b.valid  := aw_enable && out.pready
-      assert (!b.valid || b.ready)
-
-      // me below
+      r.valid  := is_r && out.pready
       r.bits.data := Cat(out.prdata, out.prdata)
-      r.bits.id   := r_id
+      r.bits.id   := rid_reg
       r.bits.resp := Mux(out.pslverr, AXI4Parameters.RESP_SLVERR, AXI4Parameters.RESP_OKAY)
       r.bits.last := true.B
 
+      b.valid  := is_b
       b.bits.resp := Mux(out.pslverr, AXI4Parameters.RESP_SLVERR, AXI4Parameters.RESP_OKAY)
-      b.bits.id   := b_id
+      b.bits.id   := bid_reg
     }
   }
 }
