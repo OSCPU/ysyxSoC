@@ -33,6 +33,12 @@
 ### CPU内部修改(2021/10/07 23:59:59前完成)
 
 * [ ] 所有触发器都需要带复位端, 使其复位后带初值
+ * Chisel福利: 可以通过以下命令对编译生成的`.fir`文件进行扫描, 找出不带复位端的寄存器:
+ ```bash
+ grep -rn "^ *reg " xxx.fir | grep -v "reset =>"
+ ```
+ 其中`xxx.fir`的文件名与顶层模块名相关, 通常位于`build/`目录下.
+ 若上述命令无输出, 说明所有寄存器已经带上复位端
 * 若实现了cache, 则需要
  * [ ] 确认ICache和DCache的data array的大小均不大于4KB
  * [ ] 确认ICache和DCache的data array均采用单口RAM
