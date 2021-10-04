@@ -102,7 +102,7 @@
   * [ ] 记录无法清理的Verilator Warning的表格
   * [ ] 一份带数据流向的处理器架构图, 用于供后端团队进行FloorPlan时参考
 
-提交方式后续发布.
+提交方式参考[这里](https://github.com/OSCPU/oscpu-framework/blob/2021/README.md)的"代码上传"小节.
 
 ### 协助SoC团队在流片仿真环境中启动RT-Thread(2021/11/07 23:59:59前完成)
 
