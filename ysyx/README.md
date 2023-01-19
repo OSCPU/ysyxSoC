@@ -1,4 +1,7 @@
 # SoC集成测试Checklist
+
+> 在阅读以下内容之前，需要先简单配置下整个仿真框架：先进入到`ysyxSoC/ysyx/utils`目录下，然后在该目录下运行`./setup.sh`来将一生一芯四期的Verilator仿真源码目录`sim`和测绘程序`prog`拷贝到`ysyxSoC/ysyx`目录下。
+
 **进行SoC集成测试的所有步骤都可以在当前目录下完成**，ysyx的目录结构如下所示：
 ```sh
 ysyxSoC/ysyx
