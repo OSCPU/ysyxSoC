@@ -1,215 +1,23 @@
 [一生一芯计划](https://oscpu.github.io/ysyx/)仿真用SoC工程
 =====================
 
-本工程按照一生一芯计划的SoC流片规范实现了一个仿真用的SoC,
-可在verilator中进行仿真, 用于在缺少商业EDA仿真环境的情况下,
-对处理器开展与流片仿真环境尽可能接近的验证工作.
+本工程按照一生一芯计划的SoC流片规范实现了一个基于开源verilator仿真工具的SoC，用于在缺少商业EDA仿真环境的情况下，对处理器开展与流片仿真环境尽可能接近的验证工作。
 
-## 相关讲座
-
-视频回看和讲座PDF文件请见[这里](https://oscpu.github.io/ysyx/events/events.html?EID=2021-09-01_SoC_Arch_And_Spec).
-
-注意: 若视频和PDF文件中的说法与本项目说明不一致, 以本项目说明为准.
-
-## SoC集成任务CheckList
-
-### 命名规范(2021/10/07 23:59:59前完成)
-
-* [ ] 将CPU代码合并到一个`.v`文件, 文件名为`ysyx_学号后六位.v`, 如`ysyx_210888.v`
- * 在Linux上可通过`cat`命令实现:
- ```bash
- cat CPU.v ALU.v regs.v ... > ysyx_210888.v
- ```
-* [ ] 将CPU顶层命名修改为`ysyx_学号后六位.v`, 如`ysyx_210888`
-* [ ] 按照[CPU接口命名规范](./ysyx/soc/cpu-interface.md)修改CPU顶层端口名
-* [ ] 为CPU内的所有模块名添加前缀`ysyx_学号后六位_`
- * 如`module ALU`修改为`module ysyx_210888_ALU`
- * Chisel福利: 我们提供一个[firrtl transform](./ysyx/module-prefix/AddModulePrefix.scala)
-   来自动添加模块名前缀, 使用方法参考[相关说明文档](./ysyx/module-prefix/README.md)
-* 对于手动开发的Verilog代码, 目前无法进行模块名前缀的自动添加, 请手动进行添加
-* [ ] 运行[命名规范自查脚本](./ysyx/soc/cpu-check.py),
-  运行方法参考[这里](./ysyx/soc/cpu-interface.md#命名规范自查脚本使用说明)
-
-### CPU内部修改(2021/10/07 23:59:59前完成)
-
-* [ ] 所有触发器都需要带复位端, 使其复位后带初值
- * Chisel福利: 可以通过以下命令对编译生成的`.fir`文件进行扫描, 找出不带复位端的寄存器:
- ```bash
- grep -rn "^ *reg " xxx.fir | grep -v "reset =>"
- ```
- 其中`xxx.fir`的文件名与顶层模块名相关, 通常位于`build/`目录下.
- 若上述命令无输出, 说明所有寄存器已经带上复位端
-* 若实现了cache, 则需要
- * [ ] 确认ICache和DCache的data array的大小均不大于4KB
- * [ ] 确认ICache和DCache的data array均采用单口RAM
- * [ ] 对data array进行RAM替换: 我们提供接口与流片用RAM一致的简化行为模型,
-   可按需选用[带写掩码的模型](./ysyx/ram/S011HD1P_X32Y2D128_BW.v)或
-   [不带写掩码的模型](./ysyx/ram/S011HD1P_X32Y2D128.v),
-   请对RAM模块进行实例化来实现data array(tag array无需替换), 端口说明见[这里](./ysyx/ram/README.md)
-* 若采用Verilog开发, 则需要
- * [ ] 确认代码中的锁存器(Latch)已经去除
-    * Chisel福利: Chisel不会生成锁存器
- * [ ] 确认代码中的异步复位触发器已经去除, 或已经实现同步撤离
-    * Chisel福利: Chisel默认生成同步复位触发器
-* 对于不使用的顶层输出端口, 需要将其赋值为常数`0`;
-  对于不使用的顶层输入端口, 悬空即可
-
-### 代码规范检查(2021/10/07 23:59:59前完成)
-
-* [ ] 对代码进行规范检查, 清除报告的Warning. 具体步骤请参考[这里](./ysyx/lint/README.md)
-
-### Verilator仿真(2021/11/01 23:59:59前完成)
-
-* [ ] 确认清除Warning后的代码可以成功启动RT-Thread
-* [ ] 将CPU集成到本项目, 具体操作请参考[集成步骤说明](./ysyx/soc/soc.md)
-* 通过快速模式(跳过SPI传输, 不可综合, 适合快速调试和迭代)对flash进行模拟,
-  运行本项目提供的测试程序, 详细信息可参考[这里](./ysyx/program/README.md).
-  为了打开flash的快速模式, 你需要在`ysyx/peripheral/spi/rtl/spi.v`的开头定义宏`FAST_FLASH`:
-  ```verilog
-  // define this macro to enable fast behavior simulation
-  // for flash by skipping SPI transfers
-  `define FAST_FLASH
-  ```
-  * 直接在flash上运行的程序(位于`ysyx/program/bin/flash`目录下):
-    * [ ] hello-flash.bin
-    * [ ] memtest-flash.bin
-    * [ ] rtthread-flash.bin
-  * 通过loader把程序加载到memory, 然后跳转运行(位于`ysyx/program/bin/loader`目录下).
-    注意需要额外实现`fence.i`指令, 若未实现cache, 只需将该指令实现成`nop`即可
-    * [ ] hello-loader.bin
-    * [ ] memtest-loader.bin
-    * [ ] rtthread-loader.bin
-* 通过正常模式(不跳过SPI传输, 仿真速度慢, 用于最终的系统测试)对flash进行模拟,
-  重新运行上述测试程序. 你需要在`ysyx/peripheral/spi/rtl/spi.v`的开头取消对宏`FAST_FLASH`的定义:
-  ```verilog
-  // define this macro to enable fast behavior simulation
-  // for flash by skipping SPI transfers
-  // `define FAST_FLASH
-  ```
-  * [ ] hello-flash.bin
-  * [ ] memtest-flash.bin
-  * [ ] rtthread-flash.bin
-  * [ ] hello-loader.bin
-  * [ ] memtest-loader.bin
-  * [ ] rtthread-loader.bin
-* [ ] 若为了正确运行测试程序而修改了设计, 需要重新进行代码规范检查,
-      并更新记录Warning的表格文件中报告Warning的代码位置
-
-### 提交(2021/10/07 23:59:59前完成)
-
-注意: 此处提交是为了尽快运行综合流程并发现新问题, 此后可以继续调试处理器的实现.
-
-提交方式参考[这里](https://github.com/OSCPU/oscpu-framework/blob/2021/README.md)的"代码上传"小节.
-
-### 协助SoC团队在流片仿真环境中启动RT-Thread(2021/11/07 23:59:59前完成)
-
-提交代码后, 具体请关注SoC团队的反馈.
-
-需要注意的是, **本项目中的SoC只用于在verilator中验证, 不参与流片环节!
-此外本项目与流片SoC仿真环境仍然有少数不同,
-在本项目中通过测试, 不代表也能通过流片SoC仿真环境的测试,
-在流片SoC仿真环境中的运行结果, 以SoC团队的反馈为准, 因此请大家务必重视SoC团队的反馈.**
-具体地, 两者的不同之处包括:
-* 没有不定态(x态)信号传播的问题
-* 没有跨时钟域和异步桥
-* 没有PLL
-
-## 模块说明
-
-* AXI4 crossbar (来源于Rocket Chip项目, 已在计算所团队的项目中经过流片验证)
-* ChipLink (来源于[sifive-blocks](https://github.com/sifive/sifive-blocks/tree/master/src/main/scala/devices/chiplink), 已在计算所团队的项目中经过流片验证)
-* UART16550 (来源于OpenCores, 已在计算所团队的项目中经过流片验证)
-* SPI控制器 (来源于OpenCores, 已在计算所团队的项目中经过流片验证)
-* SoC集成 (基于diplomacy DSL实现)
-
-## 相关文件介绍
-
-### SoC集成流程相关文件
-
-```
-ysyxSoC/ysyx
-├── program                        # 一些测试程序
-├── lint
-│   ├── Makefile                   # 代码规范检查脚本
-│   ├── README.md                  # 代码规范检查步骤说明
-│   └── Verilator中Warning无法清理说明.xlsx
-├── module-prefix
-│   ├── AddModulePrefix.scala      # 为Chisel开发的模块名添加前缀的firrtl transform
-│   └── README.md                  # transform使用说明
-├── peripheral
-│   ├── spi                        # SPI控制器
-│   │   ├── doc
-│   │   │   └── spi.pdf            # 文档
-│   │   └── rtl
-│   │       ├── amba_define.v
-│   │       ├── spi_clgen.v
-│   │       ├── spi_defines.v
-│   │       ├── spi_shift.v
-│   │       ├── spi_top.v
-│   │       └── spi.v              # 顶层文件(包含flash的XIP模式)
-│   ├── spiFlash                   # 支持SPI模式的Flash颗粒简化模型
-│   │   ├── spiFlash.cpp
-│   │   └── spiFlash.v
-│   └── uart16550                  # UART16550控制器
-│       ├── doc
-│       │   └── UART_spec.pdf      # 文档
-│       └── rtl
-│           ├── raminfr.v
-│           ├── timescale.v
-│           ├── uart_apb.v         # 顶层文件
-│           ├── uart_defines.v
-│           ├── uart_receiver.v
-│           ├── uart_regs.v
-│           ├── uart_rfifo.v
-│           ├── uart_sync_flops.v
-│           ├── uart_tfifo.v
-│           └── uart_transmitter.v
-├── ram
-│   ├── README.md                  # RAM接口说明
-│   ├── S011HD1P_X32Y2D128_BW.v    # 接口与流片用RAM一致的简化行为模型(带写掩码)
-│   └── S011HD1P_X32Y2D128.v       # 接口与流片用RAM一致的简化行为模型(不带写掩码)
-└── soc
-    ├── cpu-interface.md           # CPU接口规范说明和自查脚本使用说明
-    ├── cpu-check.py               # CPU命名规范自查脚本
-    ├── Makefile                   # 用于将Chisel代码编译成ysyxSoCFull.v, 用户无需使用
-    ├── soc.md                     # SoC集成步骤说明
-    └── ysyxSoCFull.v              # SoC的Verilog实现
+通过以下命令克隆本项目：
+```sh
+$> git clone --depth 1 -b ysyx4 https://github.com/OSCPU/ysyxSoC.git
 ```
 
-### SoC的Chisel实现相关文件
+当框架代码有更新时，通过`git pull`命令来将代码同步到本地。
 
-```
-ysyxSoC/src/main/scala/ysyx
-├── chiplink
-│   └── ...                        # ChipLink的实现
-└── ysyx
-    ├── AXI4ToAPB.scala            # AXI4-APB的转接桥, 不支持burst, 且只支持4字节以下的访问
-    ├── ChipLinkBridge.scala       # ChipLink-AXI4的转接桥
-    ├── CPU.scala                  # CPU wrapper, 将会按照SoC接口规范实例化一个CPU实例
-    ├── SoC.scala                  # SoC顶层
-    ├── SPI.scala                  # SPI wrapper, 将会实例化verilog版本的SPI控制器
-    └── Uart16550.scala            # UART16550 wrapper, 将会实例化verilog版本的UART16550控制器
-```
+## 相关讲座和资料
+1. SoC对接会议视频：[这里](https://www.bilibili.com/video/BV1We411M7xi/?spm_id_from=333.999.0.0&vd_source=81df3ac45346223ee4473448aec39121)。
+2. SOC对接会PPT：[这里](https://github.com/ysyx-ta/ysyx-soc)。
 
-## 地址空间分配
+>注意: 若视频和PPT文件中的说法与本框架说明不一致, **以本框架说明为准**。
 
-| 设备 | 地址空间 |
-| --- | --- |
-| reserve           | `0x0000_0000~0x01ff_ffff`|
-| CLINT             | `0x0200_0000~0x0200_ffff`|
-| reserve           | `0x0201_0000~0x0fff_ffff`|
-| UART16550         | `0x1000_0000~0x1000_0fff`|
-| SPI控制器         | `0x1000_1000~0x1000_1fff`|
-| reserve           | `0x1000_2000~0x2fff_ffff`|
-| SPI-flash XIP模式 | `0x3000_0000~0x3fff_ffff`|
-| ChipLink MMIO     | `0x4000_0000~0x7fff_ffff`|
-| memory            | `0x8000_0000~0xffff_ffff`|
-
-其中:
-* 处理器的复位PC需设置为`0x3000_0000`, 第一条指令从flash中取出
-* CLINT模块位于处理器内部, SoC不提供, 需要大家自行实现
-* 若需要接入其它设备(如PLIC), 请在处理器内部接入,
-  并将地址分配到预留空间中, 避免与SoC的设备地址产生冲突
+## SoC集成测试Checklist
+**SoC集成测试任务的详细内容请点击[./ysyx/README.md](./ysyx/README.md)查看，所有任务都可以在./ysyx子目录下完成。**
 
 ## 以下为Rocket Chip项目的README内容
 

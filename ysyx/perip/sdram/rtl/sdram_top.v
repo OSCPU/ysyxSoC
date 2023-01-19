@@ -1,0 +1,103 @@
+module sdram_top(
+    input         clock,
+    input         reset,
+    output        inport_awready,
+    input         inport_awvalid,
+    input  [31:0] inport_awaddr,
+    input  [3:0]  inport_awid,
+    input  [7:0]  inport_awlen,
+    input  [2:0]  inport_awsize,
+    input  [1:0]  inport_awburst,
+    output        inport_wready,
+    input         inport_wvalid,
+    input  [63:0] inport_wdata,
+    input  [7:0]  inport_wstrb,
+    input         inport_wlast,
+    input         inport_bready,
+    output        inport_bvalid,
+    output [1:0]  inport_bresp,
+    output [3:0]  inport_bid,
+    output        inport_arready,
+    input         inport_arvalid,
+    input  [31:0] inport_araddr,
+    input  [3:0]  inport_arid,
+    input  [7:0]  inport_arlen,
+    input  [2:0]  inport_arsize,
+    input  [1:0]  inport_arburst,
+    input         inport_rready,
+    output        inport_rvalid,
+    output [1:0]  inport_rresp,
+    output [63:0] inport_rdata,
+    output        inport_rlast,
+    output [3:0]  inport_rid,
+
+    input  [ 15:0]  sdram_data_input,
+    output [ 15:0]  sdram_data_output,
+    output          sdram_data_out_en,
+    output          sdram_clk,
+    output          sdram_cke,
+    output          sdram_cs,
+    output          sdram_ras,
+    output          sdram_cas,
+    output          sdram_we,
+    output [  1:0]  sdram_dqm,
+    output [ 12:0]  sdram_addr,
+    output [  1:0]  sdram_ba
+);
+
+wire [31:0] rdata_bus;
+
+sdram_axi
+#(
+.SDRAM_MHZ(100),
+.SDRAM_ADDR_W(25),
+.SDRAM_COL_W(10),
+.SDRAM_READ_LATENCY(2)
+)
+u_sdram_axi(
+    .clk_i(clock),
+    .rst_i(reset), // NOTE: be careful
+    .inport_awvalid_i(inport_awvalid),
+    .inport_awaddr_i(inport_awaddr),
+    .inport_awid_i(inport_awid),
+    .inport_awlen_i(inport_awlen),
+    .inport_awburst_i(inport_awburst),
+    .inport_wvalid_i(inport_wvalid),
+    .inport_wdata_i(inport_wdata[31:0]),
+    .inport_wstrb_i(inport_wstrb[3:0]),
+    .inport_wlast_i(inport_wlast),
+    .inport_bready_i(inport_bready),
+    .inport_arvalid_i(inport_arvalid),
+    .inport_araddr_i(inport_araddr),
+    .inport_arid_i(inport_arid),
+    .inport_arlen_i(inport_arlen),
+    .inport_arburst_i(inport_arburst),
+    .inport_rready_i(inport_rready),
+    .sdram_data_input_i(sdram_data_input),
+
+    .inport_awready_o(inport_awready),
+    .inport_wready_o(inport_wready),
+    .inport_bvalid_o(inport_bvalid),
+    .inport_bresp_o(inport_bresp),
+    .inport_bid_o(inport_bid),
+    .inport_arready_o(inport_arready),
+    .inport_rvalid_o(inport_rvalid),
+    .inport_rdata_o(rdata_bus),
+    .inport_rresp_o(inport_rresp),
+    .inport_rid_o(inport_rid),
+    .inport_rlast_o(inport_rlast),
+    .sdram_clk_o(sdram_clk),
+    .sdram_cke_o(sdram_cke),
+    .sdram_cs_o(sdram_cs),
+    .sdram_ras_o(sdram_ras),
+    .sdram_cas_o(sdram_cas),
+    .sdram_we_o(sdram_we),
+    .sdram_dqm_o(sdram_dqm),
+    .sdram_addr_o(sdram_addr),
+    .sdram_ba_o(sdram_ba),
+    .sdram_data_output_o(sdram_data_output),
+    .sdram_data_out_en_o(sdram_data_out_en)
+);
+
+assign inport_rdata = {32'b0, rdata_bus};
+endmodule

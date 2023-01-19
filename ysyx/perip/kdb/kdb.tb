@@ -1,0 +1,32 @@
+`timescale 1ns/10ps
+
+module kdb_tb;
+
+localparam PEROID = 40;
+
+reg clk,clrn;
+initial begin
+    clk = 0;
+    forever
+        #(PEROID/2) clk = ~clk;
+end
+
+initial begin
+    $dumpfile("kdb.wave");
+    $dumpvars(0, kdb_tb);
+end
+    
+initial begin
+    clrn = 1;
+    #(10) clrn = 0;
+    #(10) clrn = 1;
+    #(PEROID * 200) $finish;
+end
+
+wire ps2_clk, ps2_dat;
+kdb kdb_u(clk, clrn, ps2_clk, ps2_dat);
+
+// initial begin
+//     $monitor($time, " ps2_clk: %b ps2_dat: %b state: %b sam: %b\n", ps2_clk, ps2_dat, cur_state, ps2_sam);
+// end
+endmodule
