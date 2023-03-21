@@ -1,6 +1,6 @@
 # SoC集成测试Checklist
 
-> 在阅读以下内容之前，需要先简单配置下整个仿真框架：先进入到`ysyxSoC/ysyx/utils`目录下，然后在该目录下运行`./setup.sh`来将一生一芯四期的Verilator仿真源码目录`sim`和测绘程序`prog`拷贝到`ysyxSoC/ysyx`目录下。
+> 注意：从第四期第二批开始，为了对接PA中SoC部分的教学以及考核需求。**ysyxSoC框架不再提供仿真源程序，测试程序，运行时环境**，这些都需要同学们自己实现。但是为了方便第四期同学的测试，项目组暂时提供了一个名为`ysyx4_sim`的仓库用于存放仿真源程序和测试程序，**这个仓库到第五期时就会被私有并被移除**。在阅读以下内容之前，需要先下载`ysyx4_sim`到指定目录：先进入到`ysyxSoC/ysyx/utils`目录下，然后在该目录下运行`./setup.sh`来将一生一芯四期的Verilator仿真源码目录`sim`和测绘程序`prog`拷贝到`ysyxSoC/ysyx`目录下。
 
 **进行SoC集成测试的所有步骤都可以在当前目录下完成**，ysyx的目录结构如下所示：
 ```sh
@@ -269,8 +269,9 @@ optional arguments:
 > 注意：**以下内容不是同学们必须要完成的任务，而是给那些对我们提供的SoC仿真框架有定制化需求的同学们提供的。下面分别介绍了编译和生成自己的测试程序、生成自己的Verilator仿真程序所需要的必要步骤和使用chisel生成ysyxSoCFull框架的过程和注意要点**。
 
 ## 生成自己的测试程序
-为了方便同学们给自己的核编译软件进行测试，在`./utils`下提供了适配ysyxSoC环境的`abstract-machine`，同时提供了脚本方便进行编译操作，具体步骤如下：
-* 切换到`./utils`并执行`source setup.sh`命令设置`AM_HOME`环境变量，注意setup脚本使用了pwd命令，所以必须切换到`./utils`才能正确设置变量路径。
+
+从第四期第二批开始，项目组**不再提供适配ysyxSoC环境的`abstract-machine`**，程序的运行时环境(am)需要同学们自己实现，但是框架提供了实现参考，具体如下：
+* 正确设置`AM_HOME`环境变量。
 * 将自己的测试程序源码目录放到`./prog/src`下，源码目录下需要有个Makefile，其内容格式可以参考`./prog/src/hello/Makefile`：
     ```Makefile
     SRCS = hello.c # 所有的源码路径
@@ -278,7 +279,7 @@ optional arguments:
 
     include $(AM_HOME)/Makefile
     ```
-* 然后切换到`./prog/src`，修改`APP_NAME`和`APP_TYPE`的值。其中`APP_NAME`修改为上一个步骤中Makefile中填写的`NAME`，`APP_TYPE`修改为`flash`或者`mem`，表示生成的程序的加载类型，`flash`表示程序从flash直接执行，`mem`表示程序先从flash加载到mem中，然后再执行。
+* 然后切换到`./prog/src`，修改`run.py`中的`APP_NAME`和`APP_TYPE`的值。其中`APP_NAME`修改为上一个步骤中Makefile中填写的`NAME`，`APP_TYPE`修改为`flash`或者`mem`，表示生成的程序的加载类型，`flash`表示程序从flash直接执行，`mem`表示程序先从flash加载到mem中，然后再执行。
 * 执行`./prog/src/run.py`，编译通过的话就可以在`./prog/bin/$(FLASH_TYPE)`下得到可执行程序。
 
 ## ysyxSoCFull定制集成步骤
