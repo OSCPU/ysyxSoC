@@ -35,9 +35,10 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
     AddressSet.misaligned(0x10001000, 0x1000) ++    // SPI controller
     AddressSet.misaligned(0x30000000, 0x10000000)   // XIP flash
   ))
+  val lmrom = LazyModule(new AXI4MROM(AddressSet.misaligned(0x20000000, 0x1000)))
 
   List(lspi.node, luart.node).map(_ := apbxbar)
-  List(chiplinkNode, apbxbar := AXI4ToAPB()).map(_ := xbar)
+  List(chiplinkNode, apbxbar := AXI4ToAPB(), lmrom.node).map(_ := xbar)
   xbar := cpu.masterNode
 
   override lazy val module = new Impl
