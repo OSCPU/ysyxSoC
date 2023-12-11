@@ -69,5 +69,8 @@ class AXI4MROM(address: Seq[AddressSet])(implicit p: Parameters) extends LazyMod
     in.aw.ready := false.B
     in. w.ready := false.B
     in. b.valid := false.B
+
+    assert(!in.aw.valid, "do not support write operations")
+    assert(!in. w.valid, "do not support write operations")
   }
 }
