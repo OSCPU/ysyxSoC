@@ -5,7 +5,7 @@
 module spi_top_apb #(
   parameter flash_addr_start = 32'h30000000,
   parameter flash_addr_end   = 32'h3fffffff,
-  parameter spi_ss_num       = 2
+  parameter spi_ss_num       = 8
 ) (
   input         clk,
   input         resetn,
@@ -39,16 +39,13 @@ flash_cmd flash_cmd_i(
   .data(data)
 );
 assign spi_sck    = 1'b0;
-assign spi_ss     = 2'b0;
+assign spi_ss     = 8'b0;
 assign spi_mosi   = 1'b1;
 assign in_pslverr = 1'b0;
 assign in_pready  = in_penable && in_psel && !in_pwrite;
 assign in_prdata  = data[31:0];
 
 `else
-
-wire [7:0] ss_pad_o;
-assign spi_ss = ss_pad_o[spi_ss_num-1:0];
 
 spi_top u0_spi_top (
   .wb_clk_i(clk),
@@ -64,7 +61,7 @@ spi_top u0_spi_top (
   .wb_err_o(in_pslverr),
   .wb_int_o(),
 
-  .ss_pad_o(ss_pad_o),
+  .ss_pad_o(spi_ss),
   .sclk_pad_o(spi_sck),
   .mosi_pad_o(spi_mosi),
   .miso_pad_i(spi_miso)

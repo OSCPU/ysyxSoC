@@ -8,7 +8,7 @@ import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.util._
 
-class SPIIO(val ssWidth: Int = 2) extends Bundle {
+class SPIIO(val ssWidth: Int = 8) extends Bundle {
   val sck = Output(Bool())
   val ss = Output(UInt(ssWidth.W))
   val mosi = Output(Bool())
@@ -26,6 +26,10 @@ class spi_top_apb extends BlackBox {
 }
 
 class flash extends BlackBox {
+  val io = IO(Flipped(new SPIIO(1)))
+}
+
+class bitrev extends BlackBox {
   val io = IO(Flipped(new SPIIO(1)))
 }
 

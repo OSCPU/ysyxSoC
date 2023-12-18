@@ -77,7 +77,7 @@ module flash (
     end
   end
 
-  assign miso = {(state == data_t && counter == 8'd0) ? data_bswap : data}[31];
+  assign miso = ss ? 1'b1 : ({(state == data_t && counter == 8'd0) ? data_bswap : data}[31]);
 
 endmodule
 
