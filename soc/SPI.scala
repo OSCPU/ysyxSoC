@@ -8,9 +8,9 @@ import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.util._
 
-class SPIIO(val csWidth: Int = 2) extends Bundle {
-  val clk = Output(Bool())
-  val cs = Output(UInt(csWidth.W))
+class SPIIO(val ssWidth: Int = 2) extends Bundle {
+  val sck = Output(Bool())
+  val ss = Output(UInt(ssWidth.W))
   val mosi = Output(Bool())
   val miso = Input(Bool())
 }
@@ -26,7 +26,7 @@ class spi_top_apb extends BlackBox {
 }
 
 class flash extends BlackBox {
-  val io = IO(Flipped(new SPIIO))
+  val io = IO(Flipped(new SPIIO(1)))
 }
 
 class APBSPI(address: Seq[AddressSet])(implicit p: Parameters) extends LazyModule {

@@ -3,18 +3,16 @@
 // Refer to the data sheet for the flash instructions at
 // https://www.winbond.com/hq/product/code-storage-flash-memory/serial-nor-flash/?__locale=zh
 
-`define spi_cs_num 2
-
 module flash (
-  input                    clk,
-  input  [`spi_cs_num-1:0] cs,
-  input                    mosi,
-  output wire              miso
+  input  sck,
+  input  ss,
+  input  mosi,
+  output miso
 );
 
   typedef enum [2:0] { cmd_t, addr_t, data_t, err_t } state_t;
 
-  wire reset; assign reset = cs[0];
+  wire reset; assign reset = ss;
 
   reg [2:0]  state;
   reg [7:0]  counter;
@@ -26,13 +24,13 @@ module flash (
   wire [63:0] rdata;
   wire [63:0] raddr; assign raddr = { 40'd0, addr, 2'd0 };
   FlashRead flashRead (
-    .clock(clk),
+    .clock(sck),
     .ren(ren),
     .addr(raddr),
     .data(rdata)
   );
 
-  always@(posedge clk or posedge reset) begin
+  always@(posedge sck or posedge reset) begin
     if (reset) state <= cmd_t;
     else begin
       case (state)
@@ -50,7 +48,7 @@ module flash (
     end
   end
 
-  always@(posedge clk or posedge reset) begin
+  always@(posedge sck or posedge reset) begin
     if (reset) counter <= 8'd0;
     else begin
       case (state)
@@ -61,18 +59,18 @@ module flash (
     end
   end
 
-  always@(posedge clk or posedge reset) begin
+  always@(posedge sck or posedge reset) begin
     if (reset)               cmd <= 8'd0;
     else if (state == cmd_t) cmd <= { cmd[6:0], mosi };
   end
 
-  always@(posedge clk or posedge reset) begin
+  always@(posedge sck or posedge reset) begin
     if (reset) addr <= 22'd0;
     else if (state == addr_t && counter < 8'd22)
       addr <= { addr[20:0], mosi };
   end
 
-  always@(posedge clk or posedge reset) begin
+  always@(posedge sck or posedge reset) begin
     if (reset) data <= 64'd0;
     else if (state == addr_t && counter == 8'd23)
       data <= {
