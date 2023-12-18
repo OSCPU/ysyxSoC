@@ -15,7 +15,7 @@ class SPIIO(val csWidth: Int = 2) extends Bundle {
   val miso = Input(Bool())
 }
 
-class spi extends BlackBox {
+class spi_top_apb extends BlackBox {
   val io = IO(new Bundle {
     val clk = Input(Clock())
     val resetn = Input(Bool())
@@ -25,7 +25,7 @@ class spi extends BlackBox {
   })
 }
 
-class spiFlash extends BlackBox {
+class flash extends BlackBox {
   val io = IO(Flipped(new SPIIO))
 }
 
@@ -45,7 +45,7 @@ class APBSPI(address: Seq[AddressSet])(implicit p: Parameters) extends LazyModul
     val (in, _) = node.in(0)
     val spi_bundle = IO(new SPIIO)
 
-    val mspi = Module(new spi)
+    val mspi = Module(new spi_top_apb)
     mspi.io.clk := clock
     mspi.io.resetn := ~reset.asBool
     mspi.io.in <> in

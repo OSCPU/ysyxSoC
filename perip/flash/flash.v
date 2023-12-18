@@ -5,7 +5,7 @@
 
 `define spi_cs_num 2
 
-module spiFlash (
+module flash (
   input                    clk,
   input  [`spi_cs_num-1:0] cs,
   input                    mosi,

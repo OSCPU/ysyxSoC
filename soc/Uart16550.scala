@@ -13,7 +13,7 @@ class UARTIO extends Bundle {
   val tx = Output(Bool())
 }
 
-class uart_apb extends BlackBox {
+class uart_top_apb extends BlackBox {
   val io = IO(new Bundle {
     val clk = Input(Clock())
     val resetn = Input(Bool())
@@ -38,7 +38,7 @@ class APBUart16550(address: Seq[AddressSet])(implicit p: Parameters) extends Laz
     val (in, _) = node.in(0)
     val uart = IO(new UARTIO)
 
-    val muart = Module(new uart_apb)
+    val muart = Module(new uart_top_apb)
     muart.io.clk := clock
     muart.io.resetn := ~reset.asBool
     muart.io.in <> in
