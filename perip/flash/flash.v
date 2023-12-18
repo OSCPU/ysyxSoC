@@ -9,23 +9,22 @@ module flash (
   input  mosi,
   output miso
 );
+  wire reset = ss;
 
   typedef enum [2:0] { cmd_t, addr_t, data_t, err_t } state_t;
-
-  wire reset; assign reset = ss;
-
   reg [2:0]  state;
   reg [7:0]  counter;
   reg [7:0]  cmd;
-  reg [21:0] addr;
-  reg [63:0] data;   assign miso = data[63];
+  reg [23:0] addr;
+  reg [31:0] data;
 
-  wire        ren;   assign ren = (state == addr_t) && (counter == 8'd22);
-  wire [63:0] rdata;
-  wire [63:0] raddr; assign raddr = { 40'd0, addr, 2'd0 };
-  FlashRead flashRead (
+  wire ren = (state == addr_t) && (counter == 8'd23);
+  wire [31:0] rdata;
+  wire [31:0] raddr = {8'b0, addr[22:0], mosi};
+  flash_cmd flash_cmd_i(
     .clock(sck),
-    .ren(ren),
+    .valid(ren),
+    .cmd(cmd),
     .addr(raddr),
     .data(rdata)
   );
@@ -41,7 +40,7 @@ module flash (
 
         default: begin
           state <= state;
-          $fwrite(32'h80000002, "Assertion failed: only support `03h` read command\n");
+          $fwrite(32'h80000002, "Assertion failed: Unsupported command `%xh`, only support `03h` read command\n", cmd);
           $fatal;
         end
       endcase
@@ -65,32 +64,38 @@ module flash (
   end
 
   always@(posedge sck or posedge reset) begin
-    if (reset) addr <= 22'd0;
-    else if (state == addr_t && counter < 8'd22)
-      addr <= { addr[20:0], mosi };
+    if (reset) addr <= 24'd0;
+    else if (state == addr_t && counter < 8'd23)
+      addr <= { addr[22:0], mosi };
   end
 
+  wire [31:0] data_bswap = {rdata[7:0], rdata[15:8], rdata[23:16], rdata[31:24]};
   always@(posedge sck or posedge reset) begin
-    if (reset) data <= 64'd0;
-    else if (state == addr_t && counter == 8'd23)
-      data <= {
-        rdata[ 7: 0], rdata[15: 8], rdata[23:16], rdata[31:24],
-        rdata[39:32], rdata[47:40], rdata[55:48], rdata[63:56]
-      };
-    else if (state == data_t) data <= { data[62:0], data[63] };
+    if (reset) data <= 32'd0;
+    else if (state == data_t) begin
+      data <= { {counter == 8'd0 ? data_bswap : data}[30:0], 1'b0 };
+    end
   end
+
+  assign miso = {(state == data_t && counter == 8'd0) ? data_bswap : data}[31];
 
 endmodule
 
-import "DPI-C" function void flash_read(input longint addr, output longint data);
+import "DPI-C" function void flash_read(input int addr, output int data);
 
-module FlashRead (
+module flash_cmd(
   input             clock,
-  input             ren,
-  input      [63:0] addr,
-  output reg [63:0] data
+  input             valid,
+  input       [7:0] cmd,
+  input      [31:0] addr,
+  output reg [31:0] data
 );
   always@(posedge clock) begin
-    if (ren) flash_read(addr, data);
+    if (valid)
+      if (cmd == 8'h03) flash_read(addr, data);
+      else begin
+        $fwrite(32'h80000002, "Assertion failed: Unsupport command `%xh`, only support `03h` read command\n", cmd);
+        $fatal;
+      end
   end
 endmodule
