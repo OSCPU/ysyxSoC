@@ -76,7 +76,7 @@ module PSRAM_READER (
         endcase
 
     always @ (posedge clk or negedge rst_n)
-        if(!rst_n) state = IDLE;
+        if(!rst_n) state <= IDLE;
         else state <= nstate;
 
     // Drive the Serial Clock (sck) @ clk/2
@@ -113,13 +113,13 @@ module PSRAM_READER (
             saddr <= {addr[23:0]};
 
     // Sample with the negedge of sck
-    wire[7:0] byte_index = counter/2 - 10;
+    wire[1:0] byte_index = {counter[7:1] - 8'd10}[1:0];
     always @ (posedge clk)
         if(counter >= 20 && counter <= FINAL_COUNT)
             if(sck)
                 data[byte_index] <= {data[byte_index][3:0], din}; // Optimize!
 
-    assign dout     =   (counter < 8)   ?   CMD_EBH[7 - counter]:
+    assign dout     =   (counter < 8)   ?   {3'b0, CMD_EBH[7 - counter]}:
                         (counter == 8)  ?   saddr[23:20]        :
                         (counter == 9)  ?   saddr[19:16]        :
                         (counter == 10) ?   saddr[15:12]        :
@@ -157,7 +157,7 @@ module PSRAM_WRITER (
     output  wire [3:0]      dout,
     output  wire            douten
 );
-    localparam  DATA_START = 14;
+    //localparam  DATA_START = 14;
     localparam  IDLE = 1'b0,
                 READ = 1'b1;
 
@@ -166,7 +166,7 @@ module PSRAM_WRITER (
     reg         state, nstate;
     reg [7:0]   counter;
     reg [23:0]  saddr;
-    reg [7:0]   data [3:0];
+    //reg [7:0]   data [3:0];
 
     wire[7:0]   CMD_38H = 8'h38;
 
@@ -177,7 +177,7 @@ module PSRAM_WRITER (
         endcase
 
     always @ (posedge clk or negedge rst_n)
-        if(!rst_n) state = IDLE;
+        if(!rst_n) state <= IDLE;
         else state <= nstate;
 
     // Drive the Serial Clock (sck) @ clk/2
@@ -212,7 +212,7 @@ module PSRAM_WRITER (
         else if((state == IDLE) && wr)
             saddr <= addr;
 
-    assign dout     =   (counter < 8)   ?   CMD_38H[7 - counter]:
+    assign dout     =   (counter < 8)   ?   {3'b0, CMD_38H[7 - counter]}:
                         (counter == 8)  ?   saddr[23:20]        :
                         (counter == 9)  ?   saddr[19:16]        :
                         (counter == 10) ?   saddr[15:12]        :

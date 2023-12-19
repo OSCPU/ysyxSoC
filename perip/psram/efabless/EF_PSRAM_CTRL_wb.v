@@ -60,13 +60,13 @@ module EF_PSRAM_CTRL_wb (
     wire        mw_wr;
     wire        mw_done;
 
-    wire        doe;
+    //wire        doe;
 
     // WB Control Signals
     wire        wb_valid        =   cyc_i & stb_i;
     wire        wb_we           =   we_i & wb_valid;
     wire        wb_re           =   ~we_i & wb_valid;
-    wire[3:0]   wb_byte_sel     =   sel_i & {4{wb_we}};
+    //wire[3:0]   wb_byte_sel     =   sel_i & {4{wb_we}};
 
     // The FSM
     reg         state, nstate;
@@ -118,12 +118,14 @@ module EF_PSRAM_CTRL_wb (
 
     wire [31:0] wdata = {byte3, byte2, byte1, byte0};
 
+    /*
     wire [1:0]  waddr = (size==1 && sel_i[0]==1) ? 2'b00 :
                         (size==1 && sel_i[1]==1) ? 2'b01 :
                         (size==1 && sel_i[2]==1) ? 2'b10 :
                         (size==1 && sel_i[3]==1) ? 2'b11 :
                         (size==2 && sel_i[2]==1) ? 2'b10 :
                         2'b00;
+                      */
 
     assign mr_rd    = ( (state==ST_IDLE ) & wb_re );
     assign mw_wr    = ( (state==ST_IDLE ) & wb_we );
