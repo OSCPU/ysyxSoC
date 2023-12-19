@@ -159,7 +159,7 @@ module PSRAM_WRITER (
 );
     //localparam  DATA_START = 14;
     localparam  IDLE = 1'b0,
-                READ = 1'b1;
+                WRITE = 1'b1;
 
     wire[7:0]        FINAL_COUNT = 13 + size*2;
 
@@ -172,8 +172,8 @@ module PSRAM_WRITER (
 
     always @*
         case (state)
-            IDLE: if(wr) nstate = READ; else nstate = IDLE;
-            READ: if(done) nstate = IDLE; else nstate = READ;
+            IDLE: if(wr) nstate = WRITE; else nstate = IDLE;
+            WRITE: if(done) nstate = IDLE; else nstate = WRITE;
         endcase
 
     always @ (posedge clk or negedge rst_n)
@@ -193,7 +193,7 @@ module PSRAM_WRITER (
     always @ (posedge clk or negedge rst_n)
         if(!rst_n)
             ce_n <= 1'b1;
-        else if(state == READ)
+        else if(state == WRITE)
             ce_n <= 1'b0;
         else
             ce_n <= 1'b1;
@@ -230,7 +230,7 @@ module PSRAM_WRITER (
 
     assign douten   = (~ce_n);
 
-    assign done     = (counter == FINAL_COUNT);
+    assign done     = (counter == FINAL_COUNT + 1);
 
 
 endmodule
