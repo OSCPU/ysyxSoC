@@ -206,6 +206,7 @@ begin
         bottom <= #1 'b0;
         count  <= #1 'b0;
     end else begin
+        if (push) $write("%c", data_in);
         case ({push, pop})
         2'b10 : if (count<fifo_depth)  // overrun condition
             begin
