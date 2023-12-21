@@ -38,9 +38,10 @@ class ysyxSoCASIC(hasChipLink: Boolean)(implicit p: Parameters) extends LazyModu
   val lpsram = LazyModule(new APBPSRAM(AddressSet.misaligned(0x80000000L, 0x400000)))
   val lmrom = LazyModule(new AXI4MROM(AddressSet.misaligned(0x20000000, 0x1000)))
   val sramNode = AXI4RAM(AddressSet.misaligned(0x0f000000, 0x2000).head, false, true, 8, None, Nil, false)
+  val lsdram = LazyModule(new AXI4SDRAM(AddressSet.misaligned(0xa0000000L, 0x2000000)))
 
   List(lspi.node, luart.node, lpsram.node).map(_ := apbxbar)
-  List(apbxbar := AXI4ToAPB(), lmrom.node, sramNode).map(_ := xbar)
+  List(apbxbar := AXI4ToAPB(), lmrom.node, sramNode, lsdram.node).map(_ := xbar)
   if (hasChipLink) chiplinkNode.get := xbar
   xbar := cpu.masterNode
 
@@ -73,9 +74,11 @@ class ysyxSoCASIC(hasChipLink: Boolean)(implicit p: Parameters) extends LazyModu
     val spi = IO(chiselTypeOf(lspi.module.spi_bundle))
     val uart = IO(chiselTypeOf(luart.module.uart))
     val psram = IO(chiselTypeOf(lpsram.module.qspi_bundle))
+    val sdram = IO(chiselTypeOf(lsdram.module.sdram_bundle))
     uart <> luart.module.uart
     spi <> lspi.module.spi_bundle
     psram <> lpsram.module.qspi_bundle
+    sdram <> lsdram.module.sdram_bundle
   }
 }
 
@@ -124,5 +127,7 @@ class ysyxSoCFull(implicit p: Parameters) extends LazyModule {
 
     val psram = Module(new psram)
     psram.io <> masic.psram
+    val sdram = Module(new sdram)
+    sdram.io <> masic.sdram
   }
 }
