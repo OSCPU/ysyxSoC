@@ -1,5 +1,37 @@
+diff --git a/build.sc b/build.sc
+index 3cda29ac..b7bd0ac7 100644
+--- a/build.sc
++++ b/build.sc
+@@ -10,8 +10,8 @@ object v {
+   val scala = "2.13.10"
+   // the first version in this Map is the mainly supported version which will be used to run tests
+   val chiselCrossVersions = Map(
+-    "3.6.0" -> (ivy"edu.berkeley.cs::chisel3:3.6.0", ivy"edu.berkeley.cs:::chisel3-plugin:3.6.0"),
+     "5.0.0" -> (ivy"org.chipsalliance::chisel:5.0.0", ivy"org.chipsalliance:::chisel-plugin:5.0.0"),
++    "3.6.0" -> (ivy"edu.berkeley.cs::chisel3:3.6.0", ivy"edu.berkeley.cs:::chisel3-plugin:3.6.0"),
+   )
+   val mainargs = ivy"com.lihaoyi::mainargs:0.5.0"
+   val json4sJackson = ivy"org.json4s::json4s-jackson:4.0.5"
+@@ -141,14 +141,14 @@ trait Emulator extends Cross.Module2[String, String] {
+       os.proc("firtool",
+         generator.chirrtl().path,
+         s"--annotation-file=${generator.chiselAnno().path}",
+-        "-disable-infer-rw",
++        //"-disable-infer-rw",
+         "--disable-annotation-unknown",
+         "-dedup",
+         "-O=debug",
+-        "--split-verilog",
++        //"--split-verilog",
+         "--preserve-values=named",
+         "--output-annotation-file=mfc.anno.json",
+-        s"-o=${T.dest}"
++        s"-o=${T.dest}/TestHarness.sv"
+       ).call(T.dest)
+       PathRef(T.dest)
+     }
 diff --git a/src/main/scala/amba/axi4/Parameters.scala b/src/main/scala/amba/axi4/Parameters.scala
-index fa1ddd85..692dcc5e 100644
+index b059fb19..bd1fa835 100644
 --- a/src/main/scala/amba/axi4/Parameters.scala
 +++ b/src/main/scala/amba/axi4/Parameters.scala
 @@ -121,10 +121,10 @@ case class AXI4BundleParameters(
@@ -18,7 +50,7 @@ index fa1ddd85..692dcc5e 100644
  
    def union(x: AXI4BundleParameters) =
 diff --git a/src/main/scala/system/TestHarness.scala b/src/main/scala/system/TestHarness.scala
-index bf29c6d9..8f78a5ac 100644
+index a1e37dea..46128b11 100644
 --- a/src/main/scala/system/TestHarness.scala
 +++ b/src/main/scala/system/TestHarness.scala
 @@ -8,7 +8,7 @@ import freechips.rocketchip.devices.debug.Debug
@@ -30,49 +62,3 @@ index bf29c6d9..8f78a5ac 100644
    val io = IO(new Bundle {
      val success = Output(Bool())
    })
-diff --git a/src/main/scala/util/HellaQueue.scala b/src/main/scala/util/HellaQueue.scala
-index 39df57f9..b05cde56 100644
---- a/src/main/scala/util/HellaQueue.scala
-+++ b/src/main/scala/util/HellaQueue.scala
-@@ -47,6 +47,7 @@ class HellaQueue[T <: Data](val entries: Int)(data: => T) extends Module {
-   val fq = Module(new HellaFlowQueue(entries)(data))
-   fq.io.enq <> io.enq
-   io.deq <> Queue(fq.io.deq, 1, pipe = true)
-+  io.count := fq.io.count
- }
- 
- object HellaQueue {
-diff --git a/src/main/scala/util/ResetCatchAndSync.scala b/src/main/scala/util/ResetCatchAndSync.scala
-index 70fd447a..82e0bef0 100644
---- a/src/main/scala/util/ResetCatchAndSync.scala
-+++ b/src/main/scala/util/ResetCatchAndSync.scala
-@@ -23,7 +23,7 @@ class ResetCatchAndSync (sync: Int = 3) extends Module {
-   // those flops) and on the output of the synchronizer circuit (to control
-   // reset to any flops this circuit drives).
- 
--  val post_psd_reset = Mux(io.psd.test_mode, io.psd.test_mode_reset, reset)
-+  val post_psd_reset = Mux(io.psd.test_mode, io.psd.test_mode_reset, reset.asBool)
-   withReset(post_psd_reset) {
-     io.sync_reset := Mux(io.psd.test_mode, io.psd.test_mode_reset,
-       ~AsyncResetSynchronizerShiftReg(true.B, sync))
-diff --git a/vsim/Makefrag b/vsim/Makefrag
-index 8d5034c4..e301df5a 100644
---- a/vsim/Makefrag
-+++ b/vsim/Makefrag
-@@ -30,7 +30,16 @@ sim_csrcs = \
- # Build Verilog
- #--------------------------------------------------------------------
- 
-+final_verilog = $(generated_dir)/$(long_name).final.v
-+final_vsrc_list = $(generated_dir)/$(long_name).v \
-+                  $(generated_dir)/$(long_name).behav_srams.v \
-+                  $(vsrc)/plusarg_reader.v \
-+                  $(generated_dir)/$(long_name)/MROMHelper.v \
-+                  $(vsrc)/EICG_wrapper.v
-+
- verilog: $(sim_vsrcs)
-+	cat $(final_vsrc_list) > $(final_verilog)
-+	sed -i -e 's/_\(aw\|ar\|w\|r\|b\)_\(\|bits_\)/_\1/g' $(final_verilog)
- 
- .PHONY: verilog
- 
