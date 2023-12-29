@@ -1,8 +1,8 @@
 // See LICENSE for license details.
 package sifive.blocks.devices.chiplink
 
-import Chisel.{defaultCompileOptions => _, _}
-import freechips.rocketchip.util.CompileOptions.NotStrictInferReset
+import chisel3._
+import chisel3.util._
 import freechips.rocketchip.tilelink._
 import freechips.rocketchip.util._
 
@@ -10,21 +10,21 @@ class SourceC(info: ChipLinkInfo) extends Module
 {
   val io = new Bundle {
     val c = Decoupled(new TLBundleC(info.edgeOut.bundle))
-    val q = Decoupled(UInt(width = info.params.dataBits)).flip
+    val q = Flipped(Decoupled(UInt(info.params.dataBits.W)))
     // Used by D to find the txn
-    val d_tlSource = Valid(UInt(width = info.params.sourceBits)).flip
-    val d_clSource = UInt(OUTPUT, width = info.params.clSourceBits)
+    val d_tlSource = Flipped(Valid(UInt(info.params.sourceBits.W)))
+    val d_clSource = Output(UInt(info.params.clSourceBits.W))
   }
 
   // CAM of sources used for release
   val cam = Module(new CAM(info.params.sourcesPerDomain, info.params.clSourceBits))
 
   // A simple FSM to generate the packet components
-  val state = RegInit(UInt(0, width = 2))
-  val s_header   = UInt(0, width = 2)
-  val s_address0 = UInt(1, width = 2)
-  val s_address1 = UInt(2, width = 2)
-  val s_data     = UInt(3, width = 2)
+  val state = RegInit(0.U(2.W))
+  val s_header   = 0.U(2.W)
+  val s_address0 = 1.U(2.W)
+  val s_address1 = 2.U(2.W)
+  val s_data     = 3.U(2.W)
 
   private def hold(key: UInt)(data: UInt) = {
     val enable = state === key
@@ -39,11 +39,11 @@ class SourceC(info: ChipLinkInfo) extends Module
   val q_address0 = hold(s_address0)(io.q.bits)
   val q_address1 = hold(s_address1)(io.q.bits)
 
-  val (_, q_last) = info.firstlast(io.q, Some(UInt(2)))
+  val (_, q_last) = info.firstlast(io.q, Some(2.U))
   val q_hasData = q_opcode(0)
-  val c_first = RegEnable(state =/= s_data, io.q.fire())
+  val c_first = RegEnable(state =/= s_data, io.q.fire)
 
-  when (io.q.fire()) {
+  when (io.q.fire) {
     switch (state) {
       is (s_header)   { state := s_address0 }
       is (s_address0) { state := s_address1 }
@@ -57,7 +57,7 @@ class SourceC(info: ChipLinkInfo) extends Module
   val exists = info.edgeOut.manager.containsSafe(q_address)
   private def writeable(m: TLManagerParameters): Boolean = if (m.supportsAcquireB) m.supportsAcquireT else m.supportsPutFull
   private def acquireable(m: TLManagerParameters): Boolean = m.supportsAcquireB || m.supportsAcquireT
-  private def toBool(x: Boolean) = Bool(x)
+  private def toBool(x: Boolean) = x.B
   val writeOk = info.edgeOut.manager.fastProperty(q_address, writeable, toBool)
   val acquireOk = info.edgeOut.manager.fastProperty(q_address, acquireable, toBool)
   val q_legal = exists && (!q_hasData || writeOk) && acquireOk
@@ -70,10 +70,10 @@ class SourceC(info: ChipLinkInfo) extends Module
   io.c.bits.opcode  := q_opcode
   io.c.bits.param   := q_param
   io.c.bits.size    := q_size
-  io.c.bits.source  := Mux(q_release, source, UInt(0)) // always domain 0
+  io.c.bits.source  := Mux(q_release, source, 0.U) // always domain 0
   io.c.bits.address := info.makeError(q_legal, q_address)
   io.c.bits.data    := io.q.bits
-  io.c.bits.corrupt := Bool(false)
+  io.c.bits.corrupt := false.B
 
   val stall = c_first && !source_ok
   val xmit = q_last || state === s_data

@@ -1,34 +1,34 @@
 // See LICENSE for license details.
 package sifive.blocks.devices.chiplink
 
-import Chisel.{defaultCompileOptions => _, _}
-import freechips.rocketchip.util.CompileOptions.NotStrictInferReset
-import freechips.rocketchip.util.{rightOR,GenericParameterizedBundle}
+import chisel3._
+import chisel3.util._
+import freechips.rocketchip.util.rightOR
 
-class WideDataLayerPortLane(params: ChipLinkParams) extends GenericParameterizedBundle(params) {
-  val clk  = Clock(OUTPUT)
-  val rst  = Bool(OUTPUT)
-  val send = Bool(OUTPUT)
-  val data = UInt(OUTPUT, width=params.dataBits)
+class WideDataLayerPortLane(val params: ChipLinkParams) extends Bundle {
+  val clk  = Output(Clock())
+  val rst  = Output(Bool())
+  val send = Output(Bool())
+  val data = Output(UInt(params.dataBits.W))
 }
 
-class WideDataLayerPort(params: ChipLinkParams) extends GenericParameterizedBundle(params) {
+class WideDataLayerPort(val params: ChipLinkParams) extends Bundle {
   val c2b = new WideDataLayerPortLane(params)
-  val b2c = new WideDataLayerPortLane(params).flip
+  val b2c = Flipped(new WideDataLayerPortLane(params))
 }
 
-class DataLayer(params: ChipLinkParams) extends GenericParameterizedBundle(params) {
-  val data = UInt(OUTPUT, width=params.dataBits)
-  val last = Bool(OUTPUT)
-  val beats = UInt(OUTPUT, width=params.xferBits + 1)
+class DataLayer(val params: ChipLinkParams) extends Bundle {
+  val data = Output(UInt(params.dataBits.W))
+  val last = Output(Bool())
+  val beats = Output(UInt((params.xferBits + 1).W))
 }
 
-class CreditBump(params: ChipLinkParams) extends GenericParameterizedBundle(params) {
-  val a = UInt(OUTPUT, width = params.creditBits)
-  val b = UInt(OUTPUT, width = params.creditBits)
-  val c = UInt(OUTPUT, width = params.creditBits)
-  val d = UInt(OUTPUT, width = params.creditBits)
-  val e = UInt(OUTPUT, width = params.creditBits)
+class CreditBump(val params: ChipLinkParams) extends Bundle {
+  val a = Output(UInt(params.creditBits.W))
+  val b = Output(UInt(params.creditBits.W))
+  val c = Output(UInt(params.creditBits.W))
+  val d = Output(UInt(params.creditBits.W))
+  val e = Output(UInt(params.creditBits.W))
   def X: Seq[UInt] = Seq(a, b, c, d, e)
 
   // saturating addition
@@ -36,7 +36,7 @@ class CreditBump(params: ChipLinkParams) extends GenericParameterizedBundle(para
     val out = Wire(new CreditBump(params))
     (out.X zip (X zip that.X)) foreach { case (o, (x, y)) =>
       val z = x +& y
-      o := Mux((z >> params.creditBits).orR, ~UInt(0, width=params.creditBits), z)
+      o := Mux((z >> params.creditBits).orR, ~0.U(params.creditBits.W), z)
     }
     out
   }
@@ -47,7 +47,7 @@ class CreditBump(params: ChipLinkParams) extends GenericParameterizedBundle(para
       val mask = rightOR(x) >> 1
       val msbOH = ~(~x | mask)
       val msb = OHToUInt(msbOH << 1, params.creditBits + 1) // 0 = 0, 1 = 1, 2 = 4, 3 = 8, ...
-      val pad = (msb | UInt(0, width=5))(4,0)
+      val pad = (msb | 0.U(5.W))(4,0)
       (pad, x & mask)
     }
     val (a_msb, a_rest) = msb(a)
@@ -57,8 +57,8 @@ class CreditBump(params: ChipLinkParams) extends GenericParameterizedBundle(para
     val (e_msb, e_rest) = msb(e)
     val header = Cat(
       e_msb, d_msb, c_msb, b_msb, a_msb,
-      UInt(0, width = 4), // padding
-      UInt(5, width = 3))
+      0.U(4.W), // padding
+      5.U(3.W))
 
     val out = Wire(new CreditBump(params))
     out.a := a_rest
@@ -72,7 +72,7 @@ class CreditBump(params: ChipLinkParams) extends GenericParameterizedBundle(para
 
 object CreditBump {
   def apply(params: ChipLinkParams, x: Int): CreditBump = {
-    val v = UInt(x, width = params.creditBits)
+    val v = x.U(params.creditBits.W)
     val out = Wire(new CreditBump(params))
     out.X.foreach { _ := v }
     out
@@ -80,8 +80,8 @@ object CreditBump {
 
   def apply(params: ChipLinkParams, header: UInt): CreditBump = {
     def convert(x: UInt) =
-      Mux(x > UInt(params.creditBits),
-          ~UInt(0, width = params.creditBits),
+      Mux(x > UInt(params.creditBits.W),
+          ~0.U(params.creditBits.W),
           UIntToOH(x, params.creditBits + 1) >> 1)
     val out = Wire(new CreditBump(params))
     out.a := convert(header(11,  7))

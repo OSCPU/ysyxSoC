@@ -2,9 +2,8 @@
 
 package sifive.blocks.devices.chiplink
 
-import Chisel.{defaultCompileOptions => _, _}
-import freechips.rocketchip.util.CompileOptions.NotStrictInferReset
-import freechips.rocketchip.config.{Field, Parameters}
+import chisel3._
+import org.chipsalliance.cde.config.Parameters
 import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.tilelink._
 import freechips.rocketchip.util._
@@ -30,8 +29,8 @@ class StuckSnooper(uFn: Seq[TLClientPortParameters] => TLClientPortParameters)(i
   lazy val module = new Impl
   class Impl extends LazyModuleImp(this) {
     val io = IO(new Bundle {
-      val bypass = Bool(INPUT)
-      val pending = Bool(OUTPUT)
+      val bypass = Input(Bool())
+      val pending = Output(Bool())
     })
 
     val Seq((in0, edgeIn0), (in1, edgeIn1)) = node.in
@@ -43,7 +42,7 @@ class StuckSnooper(uFn: Seq[TLClientPortParameters] => TLClientPortParameters)(i
     val (flight, next_flight) = edgeOut.inFlight(out)
 
     io.pending := (flight > 0.U)
-    when (next_flight === UInt(0)) { bypass := io.bypass }
+    when (next_flight === 0.U) { bypass := io.bypass }
     val stall = (bypass =/= io.bypass) && edgeOut.first(out.a)
 
     in0.a.ready := !stall && out.a.ready &&  bypass
@@ -60,7 +59,7 @@ class StuckSnooper(uFn: Seq[TLClientPortParameters] => TLClientPortParameters)(i
 
     //Enable probes to in1 only after it issues an acquire
     val divertprobes = RegInit(true.B)
-    divertprobes := divertprobes && ~(in1.a.fire() && (in1.a.bits.opcode === TLMessages.AcquireBlock || in1.a.bits.opcode === TLMessages.AcquirePerm))
+    divertprobes := divertprobes && ~(in1.a.fire && (in1.a.bits.opcode === TLMessages.AcquireBlock || in1.a.bits.opcode === TLMessages.AcquirePerm))
     val bypass_c = Wire(Bool()) 
     bypass_c := bypass || divertprobes
 
@@ -83,17 +82,17 @@ class StuckSnooper(uFn: Seq[TLClientPortParameters] => TLClientPortParameters)(i
       def castE(x: TLBundleE) = { val ret = Wire(out.e.bits); ret <> x; ret }
       out.e.bits := Mux(bypass_c, castE(in0.e.bits), castE(in1.e.bits))
     } else {
-      in0.b.valid := Bool(false)
-      in0.c.ready := Bool(true)
-      in0.e.ready := Bool(true)
+      in0.b.valid := false.B
+      in0.c.ready := true.B
+      in0.e.ready := true.B
 
-      in1.b.valid := Bool(false)
-      in1.c.ready := Bool(true)
-      in1.e.ready := Bool(true)
+      in1.b.valid := false.B
+      in1.c.ready := true.B
+      in1.e.ready := true.B
 
-      out.b.ready := Bool(true)
-      out.c.valid := Bool(false)
-      out.e.valid := Bool(false)
+      out.b.ready := true.B
+      out.c.valid := false.B
+      out.e.valid := false.B
     }
   }
 }
@@ -116,7 +115,7 @@ class TLStuckSnooperTester(txns: Int)(implicit p: Parameters) extends LazyModule
   lazy val module = new Impl
   class Impl extends LazyModuleImp(this) with UnitTestModule {
     io.finished := fuzz1.module.io.finished && fuzz2.module.io.finished
-    mux.module.io.bypass := LFSR64(Bool(true))(0)
+    mux.module.io.bypass := LFSR64(true.B)(0)
   }
 }
 

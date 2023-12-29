@@ -1,34 +1,34 @@
 // See LICENSE for license details.
 package sifive.blocks.devices.chiplink
 
-import Chisel.{defaultCompileOptions => _, _}
-import freechips.rocketchip.util.CompileOptions.NotStrictInferReset
+import chisel3._
+import chisel3.util._
 import freechips.rocketchip.tilelink._
 
 class SinkE(info: ChipLinkInfo) extends Module
 {
   val io = new Bundle {
-    val e = Decoupled(new TLBundleE(info.edgeIn.bundle)).flip
+    val e = Flipped(Decoupled(new TLBundleE(info.edgeIn.bundle)))
     val q = Decoupled(new DataLayer(info.params))
     // Find the sink from D
-    val d_tlSink = Valid(UInt(width = info.params.sinkBits))
-    val d_clSink = UInt(INPUT, width = info.params.clSinkBits)
+    val d_tlSink = Valid(UInt(info.params.sinkBits.W))
+    val d_clSink = Input(UInt(info.params.clSinkBits.W))
   }
 
-  io.d_tlSink.valid := io.e.fire()
+  io.d_tlSink.valid := io.e.fire
   io.d_tlSink.bits := io.e.bits.sink
 
   val header = info.encode(
-    format = UInt(4),
-    opcode = UInt(0),
-    param  = UInt(0),
-    size   = UInt(0),
-    domain = UInt(0),
+    format = 4.U,
+    opcode = 0.U,
+    param  = 0.U,
+    size   = 0.U,
+    domain = 0.U,
     source = io.d_clSink)
 
   io.e.ready := io.q.ready
   io.q.valid := io.e.valid
-  io.q.bits.last  := Bool(true)
+  io.q.bits.last  := true.B
   io.q.bits.data  := header
-  io.q.bits.beats := UInt(1)
+  io.q.bits.beats := 1.U
 }

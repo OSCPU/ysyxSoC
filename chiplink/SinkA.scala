@@ -1,14 +1,14 @@
 // See LICENSE for license details.
 package sifive.blocks.devices.chiplink
 
-import Chisel.{defaultCompileOptions => _, _}
-import freechips.rocketchip.util.CompileOptions.NotStrictInferReset
+import chisel3._
+import chisel3.util._
 import freechips.rocketchip.tilelink._
 
 class SinkA(info: ChipLinkInfo) extends Module
 {
   val io = new Bundle {
-    val a = Decoupled(new TLBundleA(info.edgeIn.bundle)).flip
+    val a = Flipped(Decoupled(new TLBundleA(info.edgeIn.bundle)))
     val q = Decoupled(new DataLayer(info.params))
   }
 
@@ -27,13 +27,13 @@ class SinkA(info: ChipLinkInfo) extends Module
   val a_partial = a.bits.opcode === TLMessages.PutPartialData
 
   // A simple FSM to generate the packet components
-  val state = RegInit(UInt(0, width = 2))
-  val s_header   = UInt(0, width = 2)
-  val s_address0 = UInt(1, width = 2)
-  val s_address1 = UInt(2, width = 2)
-  val s_data     = UInt(3, width = 2)
+  val state = RegInit(0.U(2.W))
+  val s_header   = 0.U(2.W)
+  val s_address0 = 1.U(2.W)
+  val s_address1 = 2.U(2.W)
+  val s_data     = 3.U(2.W)
 
-  when (io.q.fire()) {
+  when (io.q.fire) {
     switch (state) {
       is (s_header)   { state := s_address0 }
       is (s_address0) { state := s_address1 }
@@ -44,7 +44,7 @@ class SinkA(info: ChipLinkInfo) extends Module
 
   // Construct the header beat
   val header = info.encode(
-    format = UInt(0),
+    format = 0.U,
     opcode = a.bits.opcode,
     param  = a.bits.param,
     size   = a.bits.size,
@@ -60,7 +60,7 @@ class SinkA(info: ChipLinkInfo) extends Module
   a.ready := io.q.ready && isLastState
   io.q.valid := a.valid
   io.q.bits.last  := a_last && isLastState
-  io.q.bits.data  := Vec(header, address0, address1, a.bits.data)(state)
-  io.q.bits.beats := Mux(a_hasData, info.size2beats(a.bits.size), UInt(0)) + UInt(3) +
-                     Mux(a_partial, info.mask2beats(a.bits.size), UInt(0))
+  io.q.bits.data  := VecInit(header, address0, address1, a.bits.data)(state)
+  io.q.bits.beats := Mux(a_hasData, info.size2beats(a.bits.size), 0.U) + 3.U +
+                     Mux(a_partial, info.mask2beats(a.bits.size), 0.U)
 }

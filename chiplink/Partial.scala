@@ -1,16 +1,16 @@
 // See LICENSE for license details.
 package sifive.blocks.devices.chiplink
 
-import Chisel.{defaultCompileOptions => _, _}
-import freechips.rocketchip.util.CompileOptions.NotStrictInferReset
+import chisel3._
+import chisel3.util._
 import freechips.rocketchip.tilelink._
 import freechips.rocketchip.util._
 
 class ParitalExtractor[T <: TLDataChannel](gen: T) extends Module
 {
   val io = new Bundle {
-    val last = Bool(INPUT)
-    val i = Decoupled(gen).flip
+    val last = Input(Bool())
+    val i = Flipped(Decoupled(gen))
     val o = Decoupled(gen)
   }
 
@@ -26,28 +26,28 @@ class ParitalExtractor[T <: TLDataChannel](gen: T) extends Module
     case b: TLBundleB => (b.data, b.mask)
   }
 
-  val state  = RegInit(UInt(0, width=4)) // number of nibbles; [0,8]
-  val shift  = Reg(UInt(width=32))
+  val state  = RegInit(0.U(4.W)) // number of nibbles; [0,8]
+  val shift  = Reg(UInt(32.W))
   val enable = i_opcode === TLMessages.PutPartialData
-  val empty  = state === UInt(0)
+  val empty  = state === 0.U
 
   when (enable) {
     val wide = shift | (i_data << (state << 2))
-    o_data := Vec.tabulate(4) { i => wide(9*(i+1)-1, 9*i+1) } .asUInt
-    o_mask := Vec.tabulate(4) { i => wide(9*i) } .asUInt
+    o_data := VecInit.tabulate(4) { i => wide(9*(i+1)-1, 9*i+1) } .asUInt
+    o_mask := VecInit.tabulate(4) { i => wide(9*i) } .asUInt
 
     // Swallow beat if we have no nibbles
     when (empty) {
-      io.i.ready := Bool(true)
-      io.o.valid := Bool(false)
+      io.i.ready := true.B
+      io.o.valid := false.B
     }
 
     // Update the FSM
-    when (io.i.fire()) {
+    when (io.i.fire) {
       shift := Mux(empty, i_data, wide >> 36)
-      state := state - UInt(1)
-      when (empty)   { state := UInt(8) }
-      when (io.last) { state := UInt(0) }
+      state := state - 1.U
+      when (empty)   { state := 8.U }
+      when (io.last) { state := 0.U }
     }
   }
 }
@@ -55,9 +55,9 @@ class ParitalExtractor[T <: TLDataChannel](gen: T) extends Module
 class PartialInjector[T <: TLDataChannel](gen: T) extends Module
 {
   val io = new Bundle {
-    val i_last = Bool(INPUT)
-    val o_last = Bool(OUTPUT)
-    val i = Decoupled(gen).flip
+    val i_last = Input(Bool())
+    val o_last = Output(Bool())
+    val i = Flipped(Decoupled(gen))
     val o = Decoupled(gen)
   }
 
@@ -73,12 +73,12 @@ class PartialInjector[T <: TLDataChannel](gen: T) extends Module
     case b: TLBundleB => b.data
   }
 
-  val state = RegInit(UInt(0, width=4)) // number of nibbles; [0,8]
-  val shift = RegInit(UInt(0, width=32))
+  val state = RegInit(0.U(4.W)) // number of nibbles; [0,8]
+  val shift = RegInit(0.U(32.W))
   val full  = state(3)
   val partial = i_opcode === TLMessages.PutPartialData
 
-  val last = RegInit(Bool(false))
+  val last = RegInit(false.B)
   io.o_last := Mux(partial, last, io.i_last)
 
   when (partial) {
@@ -90,16 +90,16 @@ class PartialInjector[T <: TLDataChannel](gen: T) extends Module
 
     // Inject a beat
     when ((io.i_last || full) && !last) {
-      io.i.ready := Bool(false)
+      io.i.ready := false.B
     }
 
     // Update the FSM
-    when (io.o.fire()) {
+    when (io.o.fire) {
       shift := wide >> 32
-      state := state + UInt(1)
+      state := state + 1.U
       when (full || last) {
-        state := UInt(0)
-        shift := UInt(0)
+        state := 0.U
+        shift := 0.U
       }
       last := io.i_last && !last
     }

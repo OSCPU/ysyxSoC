@@ -1,14 +1,14 @@
 // See LICENSE for license details.
 package sifive.blocks.devices.chiplink
 
-import Chisel.{defaultCompileOptions => _, _}
-import freechips.rocketchip.util.CompileOptions.NotStrictInferReset
+import chisel3._
+import chisel3.util._
 import freechips.rocketchip.tilelink._
 
 class SinkC(info: ChipLinkInfo) extends Module
 {
   val io = new Bundle {
-    val c = Decoupled(new TLBundleC(info.edgeIn.bundle)).flip
+    val c = Flipped(Decoupled(new TLBundleC(info.edgeIn.bundle)))
     val q = Decoupled(new DataLayer(info.params))
   }
 
@@ -24,13 +24,13 @@ class SinkC(info: ChipLinkInfo) extends Module
   val c_release = c.bits.opcode === TLMessages.Release || c.bits.opcode === TLMessages.ReleaseData
 
   // A simple FSM to generate the packet components
-  val state = RegInit(UInt(0, width = 2))
-  val s_header   = UInt(0, width = 2)
-  val s_address0 = UInt(1, width = 2)
-  val s_address1 = UInt(2, width = 2)
-  val s_data     = UInt(3, width = 2)
+  val state = RegInit(0.U(2.W))
+  val s_header   = 0.U(2.W)
+  val s_address0 = 1.U(2.W)
+  val s_address1 = 2.U(2.W)
+  val s_data     = 3.U(2.W)
 
-  when (io.q.fire()) {
+  when (io.q.fire) {
     switch (state) {
       is (s_header)   { state := s_address0 }
       is (s_address0) { state := s_address1 }
@@ -41,14 +41,14 @@ class SinkC(info: ChipLinkInfo) extends Module
 
   // Construct the header beat
   val header = info.encode(
-    format = UInt(2),
+    format = 2.U,
     opcode = c.bits.opcode,
     param  = c.bits.param,
     size   = c.bits.size,
-    domain = UInt(0), // only caches (unordered) can release
-    source = Mux(c_release, source(c.bits.source), UInt(0)))
+    domain = 0.U, // only caches (unordered) can release
+    source = Mux(c_release, source(c.bits.source), 0.U))
 
-  assert (!c.valid || domain(c.bits.source) === UInt(0))
+  assert (!c.valid || domain(c.bits.source) === 0.U)
 
   // Construct the address beats
   val address0 = c.bits.address
@@ -59,6 +59,6 @@ class SinkC(info: ChipLinkInfo) extends Module
   c.ready := io.q.ready && isLastState
   io.q.valid := c.valid
   io.q.bits.last  := c_last && isLastState
-  io.q.bits.data  := Vec(header, address0, address1, c.bits.data)(state)
-  io.q.bits.beats := Mux(c_hasData, info.size2beats(c.bits.size), UInt(0)) + UInt(3)
+  io.q.bits.data  := VecInit(header, address0, address1, c.bits.data)(state)
+  io.q.bits.beats := Mux(c_hasData, info.size2beats(c.bits.size), 0.U) + 3.U
 }

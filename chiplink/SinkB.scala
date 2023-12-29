@@ -1,14 +1,14 @@
 // See LICENSE for license details.
 package sifive.blocks.devices.chiplink
 
-import Chisel.{defaultCompileOptions => _, _}
-import freechips.rocketchip.util.CompileOptions.NotStrictInferReset
+import chisel3._
+import chisel3.util._
 import freechips.rocketchip.tilelink._
 
 class SinkB(info: ChipLinkInfo) extends Module
 {
   val io = new Bundle {
-    val b = Decoupled(new TLBundleB(info.edgeOut.bundle)).flip
+    val b = Flipped(Decoupled(new TLBundleB(info.edgeOut.bundle)))
     val q = Decoupled(new DataLayer(info.params))
   }
 
@@ -22,13 +22,13 @@ class SinkB(info: ChipLinkInfo) extends Module
   val b_partial = b.bits.opcode === TLMessages.PutPartialData
 
   // A simple FSM to generate the packet components
-  val state = RegInit(UInt(0, width = 2))
-  val s_header   = UInt(0, width = 2)
-  val s_address0 = UInt(1, width = 2)
-  val s_address1 = UInt(2, width = 2)
-  val s_data     = UInt(3, width = 2)
+  val state = RegInit(0.U(2.W))
+  val s_header   = 0.U(2.W)
+  val s_address0 = 1.U(2.W)
+  val s_address1 = 2.U(2.W)
+  val s_data     = 3.U(2.W)
 
-  when (io.q.fire()) {
+  when (io.q.fire) {
     switch (state) {
       is (s_header)   { state := s_address0 }
       is (s_address0) { state := s_address1 }
@@ -39,14 +39,14 @@ class SinkB(info: ChipLinkInfo) extends Module
 
   // Construct the header beat
   val header = info.encode(
-    format = UInt(1),
+    format = 1.U,
     opcode = b.bits.opcode,
     param  = b.bits.param,
     size   = b.bits.size,
-    domain = UInt(0), // ChipLink only allows one remote cache, in domain 0
-    source = UInt(0))
+    domain = 0.U, // ChipLink only allows one remote cache, in domain 0
+    source = 0.U)
 
-  assert (!b.valid || b.bits.source === UInt(0))
+  assert (!b.valid || b.bits.source === 0.U)
 
   // Construct the address beats
   val address0 = b.bits.address
@@ -57,7 +57,7 @@ class SinkB(info: ChipLinkInfo) extends Module
   b.ready := io.q.ready && isLastState
   io.q.valid := b.valid
   io.q.bits.last  := b_last && isLastState
-  io.q.bits.data  := Vec(header, address0, address1, b.bits.data)(state)
-  io.q.bits.beats := Mux(b_hasData, info.size2beats(b.bits.size), UInt(0)) + UInt(3) +
-                     Mux(b_partial, info.mask2beats(b.bits.size), UInt(0))
+  io.q.bits.data  := VecInit(header, address0, address1, b.bits.data)(state)
+  io.q.bits.beats := Mux(b_hasData, info.size2beats(b.bits.size), 0.U) + 3.U +
+                     Mux(b_partial, info.mask2beats(b.bits.size), 0.U)
 }

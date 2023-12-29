@@ -25,14 +25,14 @@ class CAM(keys: Int, dataBits: Int) extends Module
   io.key := OHToUInt(free_sel, keys)
 
   io.alloc.ready := free.orR
-  when (io.alloc.fire()) { data.write(io.key, io.alloc.bits) }
+  when (io.alloc.fire) { data.write(io.key, io.alloc.bits) }
 
   // Support free in same cycle as alloc
-  val bypass = io.alloc.fire() && io.free.bits === io.key
+  val bypass = io.alloc.fire && io.free.bits === io.key
   io.data := Mux(bypass, io.alloc.bits, data(io.free.bits))
 
   // Update CAM usage
-  val clr = Mux(io.alloc.fire(), free_sel, 0.U)
+  val clr = Mux(io.alloc.fire, free_sel, 0.U)
   val set = Mux(io.free.valid, UIntToOH(io.free.bits), 0.U)
   free := (free & ~clr) | set
 }

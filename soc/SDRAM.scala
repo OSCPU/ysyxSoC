@@ -6,7 +6,7 @@ import chisel3.experimental.Analog
 
 import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.amba.apb._
-import freechips.rocketchip.config.Parameters
+import org.chipsalliance.cde.config.Parameters
 import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.util._
 

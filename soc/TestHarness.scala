@@ -1,7 +1,7 @@
 package freechips.rocketchip.system
 
 import chisel3._
-import freechips.rocketchip.config.Parameters
+import org.chipsalliance.cde.config.Parameters
 import freechips.rocketchip.diplomacy.LazyModule
 import ysyx._
 

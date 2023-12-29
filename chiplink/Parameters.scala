@@ -1,9 +1,9 @@
 // See LICENSE for license details.
 package sifive.blocks.devices.chiplink
 
-import Chisel.{defaultCompileOptions => _, _}
-import freechips.rocketchip.util.CompileOptions.NotStrictInferReset
-import freechips.rocketchip.config.{Field, Parameters}
+import chisel3._
+import chisel3.util._
+import org.chipsalliance.cde.config.Field
 import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.tilelink._
 import freechips.rocketchip.util.AsyncQueueParams
@@ -70,14 +70,14 @@ case class ChipLinkInfo(params: ChipLinkParams, edgeIn: TLEdge, edgeOut: TLEdge,
     val maxKey = m.keys.max
     val maxVal = m.values.max
     val valBits = log2Up(maxVal + 1)
-    val out = Wire(Vec(maxKey + 1, UInt(width = valBits)))
-    m.foreach { case (k, v) => out(k) := UInt(v, width = valBits) }
+    val out = Wire(Vec(maxKey + 1, UInt(valBits.W)))
+    m.foreach { case (k, v) => out(k) := v.U(valBits.W) }
     out
   }
 
   // Packet format; little-endian
   def encode(format: UInt, opcode: UInt, param: UInt, size: UInt, domain: UInt, source: UInt): UInt = {
-    def fmt(x: UInt, w: Int) = (x | UInt(0, width=w))(w-1, 0)
+    def fmt(x: UInt, w: Int) = (x | 0.U(w.W))(w-1, 0)
     Cat(
       fmt(source, 16),
       fmt(domain, 3),
@@ -99,12 +99,12 @@ case class ChipLinkInfo(params: ChipLinkParams, edgeIn: TLEdge, edgeOut: TLEdge,
 
   def size2beats(size: UInt): UInt = {
     val shift = log2Ceil(params.dataBytes)
-    Cat(UIntToOH(size|UInt(0, width=4), params.xferBits + 1) >> (shift + 1), size <= UInt(shift))
+    Cat(UIntToOH(size|0.U(4.W), params.xferBits + 1) >> (shift + 1), size <= shift.U)
   }
 
   def mask2beats(size: UInt): UInt = {
     val shift = log2Ceil(params.dataBytes*8)
-    Cat(UIntToOH(size|UInt(0, width=4), params.xferBits + 1) >> (shift + 1), size <= UInt(shift))
+    Cat(UIntToOH(size|0.U(4.W), params.xferBits + 1) >> (shift + 1), size <= shift.U)
   }
 
   def beats1(x: UInt, forceFormat: Option[UInt] = None): UInt = {
@@ -113,21 +113,21 @@ case class ChipLinkInfo(params: ChipLinkParams, edgeIn: TLEdge, edgeOut: TLEdge,
     val masks = mask2beats(size)
     val grant = opcode === TLMessages.Grant || opcode === TLMessages.GrantData
     val partial = opcode === TLMessages.PutPartialData
-    val a = Mux(opcode(2), UInt(0), beats) + UInt(2) + Mux(partial, masks, UInt(0))
-    val b = Mux(opcode(2), UInt(0), beats) + UInt(2) + Mux(partial, masks, UInt(0))
-    val c = Mux(opcode(0), beats, UInt(0)) + UInt(2)
-    val d = Mux(opcode(0), beats, UInt(0)) + grant.asUInt
-    val e = UInt(0)
-    val f = UInt(0)
-    Vec(a, b, c, d, e, f)(forceFormat.getOrElse(format))
+    val a = Mux(opcode(2), 0.U, beats) + 2.U + Mux(partial, masks, 0.U)
+    val b = Mux(opcode(2), 0.U, beats) + 2.U + Mux(partial, masks, 0.U)
+    val c = Mux(opcode(0), beats, 0.U) + 2.U
+    val d = Mux(opcode(0), beats, 0.U) + grant.asUInt
+    val e = 0.U
+    val f = 0.U
+    VecInit(a, b, c, d, e, f)(forceFormat.getOrElse(format))
   }
 
   def firstlast(x: DecoupledIO[UInt], forceFormat: Option[UInt] = None): (Bool, Bool) = {
-    val count = RegInit(UInt(0))
+    val count = RegInit(0.U)
     val beats = beats1(x.bits, forceFormat)
-    val first = count === UInt(0)
-    val last  = count === UInt(1) || (first && beats === UInt(0))
-    when (x.fire()) { count := Mux(first, beats, count - UInt(1)) }
+    val first = count === 0.U
+    val last  = count === 1.U || (first && beats === 0.U)
+    when (x.fire) { count := Mux(first, beats, count - 1.U) }
     (first, last)
   }
 
@@ -135,7 +135,7 @@ case class ChipLinkInfo(params: ChipLinkParams, edgeIn: TLEdge, edgeOut: TLEdge,
   def makeError(legal: Bool, address: UInt): UInt = {
     val alignBits = log2Ceil(errorDev.alignment)
     Cat(
-      Mux(legal, address, UInt(errorDev.base))(params.addressBits-1, alignBits),
+      Mux(legal, address, errorDev.base.U)(params.addressBits-1, alignBits),
       address(alignBits-1, 0))
   }
 }

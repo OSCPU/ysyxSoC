@@ -1,40 +1,40 @@
 // See LICENSE for license details.
 package sifive.blocks.devices.chiplink
 
-import Chisel.{defaultCompileOptions => _, _}
-import freechips.rocketchip.util.CompileOptions.NotStrictInferReset
+import chisel3._
+import chisel3.util._
 import freechips.rocketchip.tilelink._
 import freechips.rocketchip.util._
 
 class RX(info: ChipLinkInfo) extends Module
 {
   val io = new Bundle {
-    val b2c_send = Bool(INPUT)
-    val b2c_data = UInt(INPUT, info.params.dataBits)
-    val a = new AsyncBundle(UInt(width = info.params.dataBits), info.params.crossing)
-    val b = new AsyncBundle(UInt(width = info.params.dataBits), info.params.crossing)
-    val c = new AsyncBundle(UInt(width = info.params.dataBits), info.params.crossing)
-    val d = new AsyncBundle(UInt(width = info.params.dataBits), info.params.crossing)
-    val e = new AsyncBundle(UInt(width = info.params.dataBits), info.params.crossing)
+    val b2c_send = Input(Bool())
+    val b2c_data = Input(UInt(info.params.dataBits.W))
+    val a = new AsyncBundle(UInt(info.params.dataBits.W), info.params.crossing)
+    val b = new AsyncBundle(UInt(info.params.dataBits.W), info.params.crossing)
+    val c = new AsyncBundle(UInt(info.params.dataBits.W), info.params.crossing)
+    val d = new AsyncBundle(UInt(info.params.dataBits.W), info.params.crossing)
+    val e = new AsyncBundle(UInt(info.params.dataBits.W), info.params.crossing)
     val rxc = new AsyncBundle(new CreditBump(info.params), AsyncQueueParams.singleton())
     val txc = new AsyncBundle(new CreditBump(info.params), AsyncQueueParams.singleton())
   }
 
   // Immediately register our input data
   val b2c_data = RegNext(RegNext(io.b2c_data))
-  val b2c_send = RegNext(RegNext(io.b2c_send), Bool(false))
+  val b2c_send = RegNext(RegNext(io.b2c_send), false.B)
   // b2c_send is NOT cleared on the first RegNext because this module's reset has a flop on it
 
   // Fit b2c into the firstlast API
-  val beat = Wire(Decoupled(UInt(width = info.params.dataBits)))
+  val beat = Wire(Decoupled(UInt(info.params.dataBits.W)))
   beat.bits  := b2c_data
   beat.valid := b2c_send
-  beat.ready := Bool(true)
+  beat.ready := true.B
 
   // Select the correct HellaQueue for the request
   val (first, _) = info.firstlast(beat)
   val formatBits  = beat.bits(2, 0)
-  val formatValid = beat.fire() && first
+  val formatValid = beat.fire && first
   val format = Mux(formatValid, formatBits, RegEnable(formatBits, formatValid))
   val formatOH = UIntToOH(format)
 
@@ -68,8 +68,8 @@ class RX(info: ChipLinkInfo) extends Module
   // Constantly transmit credit updates
   val txOut = Wire(Decoupled(new CreditBump(info.params)))
   val rxOut = Wire(Decoupled(new CreditBump(info.params)))
-  txOut.valid := Bool(true)
-  rxOut.valid := Bool(true)
+  txOut.valid := true.B
+  rxOut.valid := true.B
   txOut.bits := tx
   rxOut.bits := rx
   io.txc <> ToAsyncBundle(txOut, AsyncQueueParams.singleton())
@@ -78,7 +78,7 @@ class RX(info: ChipLinkInfo) extends Module
   // Generate new RX credits as the HellaQueues drain
   val rxInc = Wire(new CreditBump(info.params))
   (hqX zip rxInc.X) foreach { case (hq, inc) =>
-    inc := hq.io.deq.fire().asUInt
+    inc := hq.io.deq.fire.asUInt
   }
 
   // Generate new TX credits as we receive F-format messages
@@ -87,6 +87,6 @@ class RX(info: ChipLinkInfo) extends Module
   // As we hand-over credits, reset the counters
   tx := tx + txInc
   rx := rx + rxInc
-  when (txOut.fire()) { tx := txInc }
-  when (rxOut.fire()) { rx := rxInc }
+  when (txOut.fire) { tx := txInc }
+  when (rxOut.fire) { rx := rxInc }
 }
