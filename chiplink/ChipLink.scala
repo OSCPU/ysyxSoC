@@ -201,6 +201,11 @@ class ChipLink(val params: ChipLinkParams)(implicit p: Parameters) extends LazyM
       tx.io.sc <> sinkC.io.q
       tx.io.sd <> sinkD.io.q
       tx.io.se <> sinkE.io.q
+      tx.io.a := DontCare
+      tx.io.b := DontCare
+      tx.io.c := DontCare
+      tx.io.d := DontCare
+      tx.io.e := DontCare
     } else {
       // Create the TX clock domain from input
       tx.clock := io.c2b_clk

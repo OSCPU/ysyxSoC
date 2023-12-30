@@ -7,10 +7,10 @@ import freechips.rocketchip.tilelink._
 
 class SinkC(info: ChipLinkInfo) extends Module
 {
-  val io = new Bundle {
+  val io = IO(new Bundle {
     val c = Flipped(Decoupled(new TLBundleC(info.edgeIn.bundle)))
     val q = Decoupled(new DataLayer(info.params))
-  }
+  })
 
   // Map TileLink sources to ChipLink sources+domain
   val tl2cl = info.sourceMap

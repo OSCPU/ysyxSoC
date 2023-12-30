@@ -8,7 +8,7 @@ import freechips.rocketchip.util._
 
 class RX(info: ChipLinkInfo) extends Module
 {
-  val io = new Bundle {
+  val io = IO(new Bundle {
     val b2c_send = Input(Bool())
     val b2c_data = Input(UInt(info.params.dataBits.W))
     val a = new AsyncBundle(UInt(info.params.dataBits.W), info.params.crossing)
@@ -18,7 +18,7 @@ class RX(info: ChipLinkInfo) extends Module
     val e = new AsyncBundle(UInt(info.params.dataBits.W), info.params.crossing)
     val rxc = new AsyncBundle(new CreditBump(info.params), AsyncQueueParams.singleton())
     val txc = new AsyncBundle(new CreditBump(info.params), AsyncQueueParams.singleton())
-  }
+  })
 
   // Immediately register our input data
   val b2c_data = RegNext(RegNext(io.b2c_data))

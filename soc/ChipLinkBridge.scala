@@ -17,7 +17,7 @@ import sifive.blocks.devices.chiplink._
 
 object ChipLinkParam {
   // Must have a cacheable address sapce.
-  val mem  = AddressSet(0x80000000L, 0x80000000L - 1)
+  val mem  = AddressSet(0xc0000000L, 0x40000000L - 1)
   val mmio = AddressSet(0x40000000L, 0x40000000L - 1)
   val allSpace = Seq(mem, mmio)
   val idBits = 4
@@ -41,7 +41,10 @@ class LinkTopBase(implicit p: Parameters) extends LazyModule {
   chiplink.node := fxbar
   ferr.node := fxbar
 
-  override lazy val module = new LinkTopBaseImpl(this)
+  lazy val module = new LinkTopBaseImpl(this) with DontTouch {
+    chiplink.module.io.c2b_clk := clock
+    chiplink.module.io.c2b_rst := reset
+  }
 }
 
 class LinkTopBaseImpl[+L <: LinkTopBase](_outer: L) extends LazyModuleImp(_outer) {
@@ -150,8 +153,6 @@ class ChipLinkMaster(implicit p: Parameters) extends LinkTopBase
   // Hint & Atomic augment
   mbus := TLAtomicAutomata(passthrough=false) := TLFIFOFixer(TLFIFOFixer.all) := TLHintHandler() := TLWidthWidget(4) := chiplink.node
   err.node := TLWidthWidget(8) := mbus
-
-  override lazy val module = new LinkTopBaseImpl(this) with DontTouch
 }
 
 
@@ -169,6 +170,4 @@ class ChipLinkSlave(implicit p: Parameters) extends LinkTopBase
   // Hint & Atomic augment
   mbus := TLAtomicAutomata(passthrough=false) := TLFIFOFixer(TLFIFOFixer.all) := TLHintHandler() := TLWidthWidget(4) := chiplink.node
   err.node := TLWidthWidget(8) := mbus
-
-  override lazy val module = new LinkTopBaseImpl(this) with DontTouch
 }

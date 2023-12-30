@@ -48,7 +48,7 @@ class StuckSnooper(uFn: Seq[TLClientPortParameters] => TLClientPortParameters)(i
     in0.a.ready := !stall && out.a.ready &&  bypass
     in1.a.ready := !stall && out.a.ready && !bypass
     out.a.valid := !stall && Mux(bypass, in0.a.valid, in1.a.valid)
-    def castA(x: TLBundleA) = { val ret = Wire(out.a.bits); ret <> x; ret }
+    def castA(x: TLBundleA) = { val ret = Wire(chiselTypeOf(out.a.bits)); ret <> x; ret }
     out.a.bits := Mux(bypass, castA(in0.a.bits), castA(in1.a.bits))
 
     out.d.ready := Mux(bypass, in0.d.ready, in1.d.ready)
@@ -73,13 +73,13 @@ class StuckSnooper(uFn: Seq[TLClientPortParameters] => TLClientPortParameters)(i
       in0.c.ready := out.c.ready &&  bypass_c
       in1.c.ready := out.c.ready && !bypass_c
       out.c.valid := Mux(bypass_c, in0.c.valid, in1.c.valid)
-      def castC(x: TLBundleC) = { val ret = Wire(out.c.bits); ret <> x; ret }
+      def castC(x: TLBundleC) = { val ret = Wire(chiselTypeOf(out.c.bits)); ret <> x; ret }
       out.c.bits := Mux(bypass_c, castC(in0.c.bits), castC(in1.c.bits))
 
       in0.e.ready := out.e.ready &&  bypass_c
       in1.e.ready := out.e.ready && !bypass_c
       out.e.valid := Mux(bypass_c, in0.e.valid, in1.e.valid)
-      def castE(x: TLBundleE) = { val ret = Wire(out.e.bits); ret <> x; ret }
+      def castE(x: TLBundleE) = { val ret = Wire(chiselTypeOf(out.e.bits)); ret <> x; ret }
       out.e.bits := Mux(bypass_c, castE(in0.e.bits), castE(in1.e.bits))
     } else {
       in0.b.valid := false.B

@@ -8,13 +8,13 @@ import freechips.rocketchip.util._
 
 class SourceD(info: ChipLinkInfo) extends Module
 {
-  val io = new Bundle {
+  val io = IO(new Bundle {
     val d = Decoupled(new TLBundleD(info.edgeIn.bundle))
     val q = Flipped(Decoupled(UInt(info.params.dataBits.W)))
     // Used by E to find the txn
     val e_tlSink = Flipped(Valid(UInt(info.params.sinkBits.W)))
     val e_clSink = Output(UInt(info.params.clSinkBits.W))
-  }
+  })
 
   // We need a sink id CAM
   val cam = Module(new CAM(info.params.sinks, info.params.clSinkBits))

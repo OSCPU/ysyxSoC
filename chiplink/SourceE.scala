@@ -8,10 +8,10 @@ import freechips.rocketchip.util._
 
 class SourceE(info: ChipLinkInfo) extends Module
 {
-  val io = new Bundle {
+  val io = IO(new Bundle {
     val e = Decoupled(new TLBundleE(info.edgeOut.bundle))
     val q = Flipped(Decoupled(UInt(info.params.dataBits.W)))
-  }
+  })
 
   // Extract header fields
   val Seq(_, _, _, _, _, q_sink) = info.decode(io.q.bits)

@@ -8,13 +8,13 @@ import freechips.rocketchip.util._
 
 class SourceA(info: ChipLinkInfo) extends Module
 {
-  val io = new Bundle {
+  val io = IO(new Bundle {
     val a = Decoupled(new TLBundleA(info.edgeOut.bundle))
     val q = Flipped(Decoupled(UInt(info.params.dataBits.W)))
     // Used by D to find the txn
     val d_tlSource = Flipped(Valid(UInt(info.params.sourceBits.W)))
     val d_clSource = Output(UInt(info.params.clSourceBits.W))
-  }
+  })
 
   // CAM of sources used for each domain
   val cams = Seq.fill(info.params.domains) {

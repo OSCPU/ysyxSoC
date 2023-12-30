@@ -7,14 +7,14 @@ import freechips.rocketchip.tilelink._
 
 class SinkD(info: ChipLinkInfo) extends Module
 {
-  val io = new Bundle {
+  val io = IO(new Bundle {
     val d = Flipped(Decoupled(new TLBundleD(info.edgeOut.bundle)))
     val q = Decoupled(new DataLayer(info.params))
     val a_tlSource = Valid(UInt(info.params.sourceBits.W))
     val a_clSource = Input(UInt(info.params.clSourceBits.W))
     val c_tlSource = Valid(UInt(info.params.sourceBits.W))
     val c_clSource = Input(UInt(info.params.clSourceBits.W))
-  }
+  })
 
   // The FSM states
   val state = RegInit(0.U(2.W))

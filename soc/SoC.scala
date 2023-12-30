@@ -58,7 +58,7 @@ class ysyxSoCASIC(hasChipLink: Boolean)(implicit p: Parameters) extends LazyModu
       (chipMaster.get.slave zip chiplinkNode.get.in) foreach { case (io, (bundle, _)) => io <> bundle }
 
       // connect chiplink dma interface to cpu
-      cpu.module.slave <> chipMaster.get.master_mem
+      cpu.module.slave <> chipMaster.get.master_mem(0)
 
       // expose chiplink fpga I/O interface as ports
       fpga_io.get <> chipMaster.get.module.fpga_io

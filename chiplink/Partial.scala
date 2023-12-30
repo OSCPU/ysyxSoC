@@ -8,11 +8,11 @@ import freechips.rocketchip.util._
 
 class ParitalExtractor[T <: TLDataChannel](gen: T) extends Module
 {
-  val io = new Bundle {
+  val io = IO(new Bundle {
     val last = Input(Bool())
-    val i = Flipped(Decoupled(gen))
-    val o = Decoupled(gen)
-  }
+    val i = Flipped(Decoupled(chiselTypeOf(gen)))
+    val o = Decoupled(chiselTypeOf(gen))
+  })
 
   io.o <> io.i
 
@@ -54,12 +54,12 @@ class ParitalExtractor[T <: TLDataChannel](gen: T) extends Module
 
 class PartialInjector[T <: TLDataChannel](gen: T) extends Module
 {
-  val io = new Bundle {
+  val io = IO(new Bundle {
     val i_last = Input(Bool())
     val o_last = Output(Bool())
-    val i = Flipped(Decoupled(gen))
-    val o = Decoupled(gen)
-  }
+    val i = Flipped(Decoupled(chiselTypeOf(gen)))
+    val o = Decoupled(chiselTypeOf(gen))
+  })
 
   io.o <> io.i
 

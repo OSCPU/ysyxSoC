@@ -7,10 +7,10 @@ import freechips.rocketchip.tilelink._
 
 class SinkB(info: ChipLinkInfo) extends Module
 {
-  val io = new Bundle {
+  val io = IO(new Bundle {
     val b = Flipped(Decoupled(new TLBundleB(info.edgeOut.bundle)))
     val q = Decoupled(new DataLayer(info.params))
-  }
+  })
 
   // We need a Q because we stall the channel while serializing it's header
   val inject = Module(new PartialInjector(io.b.bits))

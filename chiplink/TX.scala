@@ -8,7 +8,7 @@ import freechips.rocketchip.util._
 
 class TX(info: ChipLinkInfo) extends Module
 {
-  val io = new Bundle {
+  val io = IO(new Bundle {
     val c2b_clk  = Output(Clock())
     val c2b_rst  = Output(Bool())
     val c2b_send = Output(Bool())
@@ -25,7 +25,7 @@ class TX(info: ChipLinkInfo) extends Module
     val se = Flipped(DecoupledIO(new DataLayer(info.params)))
     val rxc = Flipped(new AsyncBundle(new CreditBump(info.params), AsyncQueueParams.singleton()))
     val txc = Flipped(new AsyncBundle(new CreditBump(info.params), AsyncQueueParams.singleton()))
-  }
+  })
 
   // Currently available credits
   val rx = RegInit(CreditBump(info.params, 0))
@@ -39,6 +39,11 @@ class TX(info: ChipLinkInfo) extends Module
 
   // Cross the requests (if necessary)
   val sync = info.params.syncTX
+  io.a := DontCare
+  io.b := DontCare
+  io.c := DontCare
+  io.d := DontCare
+  io.e := DontCare
   val qa = if (sync) ShiftQueue(io.sa, 2) else FromAsyncBundle(io.a)
   val qb = if (sync) ShiftQueue(io.sb, 2) else FromAsyncBundle(io.b)
   val qc = if (sync) ShiftQueue(io.sc, 2) else FromAsyncBundle(io.c)
@@ -70,7 +75,7 @@ class TX(info: ChipLinkInfo) extends Module
   rx := Mux(rxQ.io.enq.fire, rxLeft, rx) + Mux(rxInc.fire, rxInc.bits, CreditBump(info.params, 0))
 
   // Include the F credit channel in arbitration
-  val f = Wire(rxQ.io.deq)
+  val f = Wire(chiselTypeOf(rxQ.io.deq))
   val ioF = ioX :+ f
   val requests = Cat(ioF.map(_.valid).reverse)
   val lasts = Cat(ioF.map(_.bits.last).reverse)
@@ -90,7 +95,7 @@ class TX(info: ChipLinkInfo) extends Module
 
   // Select a channel to transmit from those with data and space
   val first = RegInit(true.B)
-  val state = Reg(0.U(6.W))
+  val state = RegInit(0.U(6.W))
   val readys = TLArbiter.roundRobin(6, requests, first)
   val winner = readys & requests
   val grant = Mux(first, winner, state)

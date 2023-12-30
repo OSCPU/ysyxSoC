@@ -7,13 +7,13 @@ import freechips.rocketchip.tilelink._
 
 class SinkE(info: ChipLinkInfo) extends Module
 {
-  val io = new Bundle {
+  val io = IO(new Bundle {
     val e = Flipped(Decoupled(new TLBundleE(info.edgeIn.bundle)))
     val q = Decoupled(new DataLayer(info.params))
     // Find the sink from D
     val d_tlSink = Valid(UInt(info.params.sinkBits.W))
     val d_clSink = Input(UInt(info.params.clSinkBits.W))
-  }
+  })
 
   io.d_tlSink.valid := io.e.fire
   io.d_tlSink.bits := io.e.bits.sink

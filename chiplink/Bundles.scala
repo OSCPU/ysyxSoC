@@ -80,7 +80,7 @@ object CreditBump {
 
   def apply(params: ChipLinkParams, header: UInt): CreditBump = {
     def convert(x: UInt) =
-      Mux(x > UInt(params.creditBits.W),
+      Mux(x > params.creditBits.U,
           ~0.U(params.creditBits.W),
           UIntToOH(x, params.creditBits + 1) >> 1)
     val out = Wire(new CreditBump(params))

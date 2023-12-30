@@ -8,10 +8,10 @@ import freechips.rocketchip.util._
 
 class SourceB(info: ChipLinkInfo) extends Module
 {
-  val io = new Bundle {
+  val io = IO(new Bundle {
     val b = Decoupled(new TLBundleB(info.edgeIn.bundle))
     val q = Flipped(Decoupled(UInt(info.params.dataBits.W)))
-  }
+  })
 
   // Find the optional cache (at most one)
   val cache = info.edgeIn.client.clients.filter(_.supports.probe).headOption
