@@ -18,6 +18,7 @@ module psram_top_apb (
 );
 
   wire [3:0] din, dout, douten;
+  wire ack;
   EF_PSRAM_CTRL_wb u0 (
     .clk_i(clk),
     .rst_i(!resetn),
@@ -27,7 +28,7 @@ module psram_top_apb (
     .sel_i(in_pstrb),
     .cyc_i(in_penable),
     .stb_i(in_psel),
-    .ack_o(in_pready),
+    .ack_o(ack),
     .we_i(in_pwrite),
   
     .sck(qspi_sck),
@@ -37,6 +38,7 @@ module psram_top_apb (
     .douten(douten)
   );
   
+  assign in_pready = ack && in_psel;
   assign in_pslverr = 1'b0;
   assign qspi_dio[0] = douten[0] ? dout[0] : 1'bz;
   assign qspi_dio[1] = douten[1] ? dout[1] : 1'bz;
