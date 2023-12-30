@@ -26,7 +26,7 @@ module psram_top_apb (
     .dat_i(in_pwdata),
     .dat_o(in_prdata),
     .sel_i(in_pstrb),
-    .cyc_i(in_penable),
+    .cyc_i(in_psel),
     .stb_i(in_psel),
     .ack_o(ack),
     .we_i(in_pwrite),
