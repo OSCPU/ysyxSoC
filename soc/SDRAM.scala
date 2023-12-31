@@ -45,6 +45,10 @@ class sdram extends BlackBox {
   val io = IO(Flipped(new SDRAMIO))
 }
 
+class sdramChisel extends RawModule {
+  val io = IO(Flipped(new SDRAMIO))
+}
+
 class AXI4SDRAM(address: Seq[AddressSet])(implicit p: Parameters) extends LazyModule {
   val beatBytes = 8
   val node = AXI4SlaveNode(Seq(AXI4SlavePortParameters(
