@@ -41,6 +41,7 @@ flash_cmd flash_cmd_i(
 assign spi_sck    = 1'b0;
 assign spi_ss     = 8'b0;
 assign spi_mosi   = 1'b1;
+assign spi_irq_out= 1'b0;
 assign in_pslverr = 1'b0;
 assign in_pready  = in_penable && in_psel && !in_pwrite;
 assign in_prdata  = data[31:0];
@@ -59,7 +60,7 @@ spi_top u0_spi_top (
   .wb_cyc_i(in_penable),
   .wb_ack_o(in_pready),
   .wb_err_o(in_pslverr),
-  .wb_int_o(),
+  .wb_int_o(spi_irq_out),
 
   .ss_pad_o(spi_ss),
   .sclk_pad_o(spi_sck),
