@@ -1,10 +1,14 @@
+all:
+	@echo "This Makefile is used for development. Do not use it if you are not going to change the Chisel code."
+
 FINAL_V = rocket-chip/out/emulator/freechips.rocketchip.system.TestHarness/freechips.rocketchip.system.DefaultConfig/mfccompiler/compile.dest/TestHarness.sv
 YSYXSOCFULL_V = generated/ysyxSoCFull.v
-
-all:
-	@echo "This Makefile is used for development. Do not use it if you are not going to change the scala code."
+ROCKET_CHIP_YSYXSOC_PATH  = rocket-chip/src/main/scala/ysyxSoC
+ROCKET_CHIP_CHIPLINK_PATH = rocket-chip/src/main/scala/chiplink
 
 $(YSYXSOCFULL_V):
+	cp $(abspath soc)/* $(ROCKET_CHIP_YSYXSOC_PATH)
+	cp $(abspath chiplink)/* $(ROCKET_CHIP_CHIPLINK_PATH)
 	$(MAKE) -C rocket-chip verilog
 	cp $(FINAL_V) $@
 	sed -i -e 's/_\(aw\|ar\|w\|r\|b\)_\(\|bits_\)/_\1/g' $@
@@ -12,10 +16,13 @@ $(YSYXSOCFULL_V):
 
 verilog: $(YSYXSOCFULL_V)
 
+clean:
+	-$(MAKE) -C rocket-chip clean
+	-rm $(YSYXSOCFULL_V)
+
 dev-init:
 	git submodule update --init --recursive
 	cd rocket-chip && git apply ../patch/rocket-chip.patch
-	cp -r $(abspath soc) rocket-chip/src/main/scala/ysyxSoC
-	cp -r $(abspath chiplink) rocket-chip/src/main/scala/chiplink
+	mkdir -p $(ROCKET_CHIP_YSYXSOC_PATH) $(ROCKET_CHIP_CHIPLINK_PATH)
 
-.PHONY: verilog $(YSYXSOCFULL_V) dev-init
+.PHONY: verilog $(YSYXSOCFULL_V) clean dev-init
