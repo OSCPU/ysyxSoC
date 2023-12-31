@@ -32,6 +32,7 @@ class ysyxSoCASIC(hasChipLink: Boolean)(implicit p: Parameters) extends LazyModu
 
   val luart = LazyModule(new APBUart16550(AddressSet.misaligned(0x10000000, 0x1000)))
   val lgpio = LazyModule(new APBGPIO(AddressSet.misaligned(0x10002000, 0x10)))
+  val lkeyboard = LazyModule(new APBKeyboard(AddressSet.misaligned(0x10011000, 0x8)))
   val lspi  = LazyModule(new APBSPI(
     AddressSet.misaligned(0x10001000, 0x1000) ++    // SPI controller
     AddressSet.misaligned(0x30000000, 0x10000000)   // XIP flash
@@ -41,7 +42,7 @@ class ysyxSoCASIC(hasChipLink: Boolean)(implicit p: Parameters) extends LazyModu
   val sramNode = AXI4RAM(AddressSet.misaligned(0x0f000000, 0x2000).head, false, true, 8, None, Nil, false)
   val lsdram = LazyModule(new APBSDRAM(AddressSet.misaligned(0xa0000000L, 0x2000000)))
 
-  List(lspi.node, luart.node, lpsram.node, lsdram.node, lgpio.node).map(_ := apbxbar)
+  List(lspi.node, luart.node, lpsram.node, lsdram.node, lgpio.node, lkeyboard.node).map(_ := apbxbar)
   List(apbxbar := AXI4ToAPB(), lmrom.node, sramNode).map(_ := xbar)
   if (hasChipLink) chiplinkNode.get := xbar
   xbar := cpu.masterNode
@@ -77,11 +78,13 @@ class ysyxSoCASIC(hasChipLink: Boolean)(implicit p: Parameters) extends LazyModu
     val psram = IO(chiselTypeOf(lpsram.module.qspi_bundle))
     val sdram = IO(chiselTypeOf(lsdram.module.sdram_bundle))
     val gpio = IO(chiselTypeOf(lgpio.module.gpio_bundle))
+    val ps2 = IO(chiselTypeOf(lkeyboard.module.ps2_bundle))
     uart <> luart.module.uart
     spi <> lspi.module.spi_bundle
     psram <> lpsram.module.qspi_bundle
     sdram <> lsdram.module.sdram_bundle
     gpio <> lgpio.module.gpio_bundle
+    ps2 <> lkeyboard.module.ps2_bundle
   }
 }
 
@@ -135,7 +138,9 @@ class ysyxSoCFull(implicit p: Parameters) extends LazyModule {
 
     val externalPins = IO(new Bundle{
       val gpio = chiselTypeOf(masic.gpio)
+      val ps2 = chiselTypeOf(masic.ps2)
     })
     externalPins.gpio <> masic.gpio
+    externalPins.ps2 <> masic.ps2
   }
 }
