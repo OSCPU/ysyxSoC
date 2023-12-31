@@ -1,5 +1,10 @@
+# Uncomment the following line if you want to modify the Chisel code.
+#USE_CHISEL = 1
+
 all:
 	@echo "This Makefile is used for development. Do not use it if you are not going to change the Chisel code."
+
+ifeq ($(USE_CHISEL),1)
 
 FINAL_V = rocket-chip/out/emulator/freechips.rocketchip.system.TestHarness/freechips.rocketchip.system.DefaultConfig/mfccompiler/compile.dest/TestHarness.sv
 YSYXSOCFULL_V = generated/ysyxSoCFull.v
@@ -26,3 +31,9 @@ dev-init:
 	mkdir -p $(ROCKET_CHIP_YSYXSOC_PATH) $(ROCKET_CHIP_CHIPLINK_PATH)
 
 .PHONY: verilog $(YSYXSOCFULL_V) clean dev-init
+
+else
+
+%: all
+	
+endif
