@@ -7,8 +7,8 @@ module spi_top_apb #(
   parameter flash_addr_end   = 32'h3fffffff,
   parameter spi_ss_num       = 8
 ) (
-  input         clk,
-  input         resetn,
+  input         clock,
+  input         reset,
   input  [31:0] in_paddr,
   input         in_psel,
   input         in_penable,
@@ -32,7 +32,7 @@ module spi_top_apb #(
 wire [31:0] data;
 parameter invalid_cmd = 8'h0;
 flash_cmd flash_cmd_i(
-  .clock(clk),
+  .clock(clock),
   .valid(in_psel && !in_penable),
   .cmd(in_pwrite ? invalid_cmd : 8'h03),
   .addr({8'b0, in_paddr[23:2], 2'b0}),
@@ -49,8 +49,8 @@ assign in_prdata  = data[31:0];
 `else
 
 spi_top u0_spi_top (
-  .wb_clk_i(clk),
-  .wb_rst_i(!resetn),
+  .wb_clk_i(clock),
+  .wb_rst_i(reset),
   .wb_adr_i(in_paddr[4:0]),
   .wb_dat_i(in_pwdata),
   .wb_dat_o(in_prdata),

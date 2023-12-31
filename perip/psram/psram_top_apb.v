@@ -1,6 +1,6 @@
 module psram_top_apb (
-  input         clk,
-  input         resetn,
+  input         clock,
+  input         reset,
   input  [31:0] in_paddr,
   input         in_psel,
   input         in_penable,
@@ -20,8 +20,8 @@ module psram_top_apb (
   wire [3:0] din, dout, douten;
   wire ack;
   EF_PSRAM_CTRL_wb u0 (
-    .clk_i(clk),
-    .rst_i(!resetn),
+    .clk_i(clock),
+    .rst_i(reset),
     .adr_i(in_paddr),
     .dat_i(in_pwdata),
     .dat_o(in_prdata),

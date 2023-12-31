@@ -1,6 +1,6 @@
 module uart_top_apb (
-       input   wire        resetn
-     , input   wire        clk
+       input   wire        reset
+     , input   wire        clock
      , input   wire        in_psel
      , input   wire        in_penable
      , input   wire [2:0]   in_pprot
@@ -34,8 +34,8 @@ module uart_top_apb (
    //--------------------------------------------------------
    assign in_pready = in_psel && in_penable;
    assign in_pslverr = 1'b0;
-   assign reg_we  = resetn & in_psel & ~in_penable &  in_pwrite;
-   assign reg_re  = resetn & in_psel & ~in_penable & ~in_pwrite;
+   assign reg_we  = ~reset & in_psel & ~in_penable &  in_pwrite;
+   assign reg_re  = ~reset & in_psel & ~in_penable & ~in_pwrite;
    assign reg_adr = in_paddr[2:0]; //assign adr_o   = in_paddr[2:0];
    assign in_prdata  = (in_psel) ? {4{reg_dat8_r}} : 'h0;
    always @ (in_paddr[1:0] or in_pwdata) begin
@@ -53,7 +53,7 @@ module uart_top_apb (
              `endif
              endcase
    end
-   always @ (posedge clk) begin
+   always @ (posedge clock) begin
      reg_dat8_w_reg <= reg_dat8_w;
    end
    //--------------------------------------------------------
@@ -61,7 +61,7 @@ module uart_top_apb (
    // As shown below reg_dat_i should be stable
    // one-cycle after reg_we negates.
    //              ___     ___     ___     ___     ___     ___
-   //  clk      __|   |___|   |___|   |___|   |___|   |___|   |__
+   //  clock    __|   |___|   |___|   |___|   |___|   |___|   |__
    //             ________________        ________________
    //  reg_adr  XX________________XXXXXXXX________________XXXX
    //             ________________
@@ -74,8 +74,8 @@ module uart_top_apb (
    //  reg_we   __|       |_____________________________________
    //
    uart_regs Uregs(
-          .clk         (clk),
-          .wb_rst_i    (~resetn),
+          .clk         (clock),
+          .wb_rst_i    (reset),
           .wb_addr_i   (reg_adr),
           .wb_dat_i    (in_pwrite ? reg_dat8_w:reg_dat8_w_reg),
           .wb_dat_o    (reg_dat8_r),

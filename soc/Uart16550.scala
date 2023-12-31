@@ -15,8 +15,8 @@ class UARTIO extends Bundle {
 
 class uart_top_apb extends BlackBox {
   val io = IO(new Bundle {
-    val clk = Input(Clock())
-    val resetn = Input(Bool())
+    val clock = Input(Clock())
+    val reset = Input(Reset())
     val in = Flipped(new APBBundle(APBBundleParameters(addrBits = 32, dataBits = 32)))
     val uart = new UARTIO
   })
@@ -39,8 +39,8 @@ class APBUart16550(address: Seq[AddressSet])(implicit p: Parameters) extends Laz
     val uart = IO(new UARTIO)
 
     val muart = Module(new uart_top_apb)
-    muart.io.clk := clock
-    muart.io.resetn := ~reset.asBool
+    muart.io.clock := clock
+    muart.io.reset := reset
     muart.io.in <> in
     uart <> muart.io.uart
   }

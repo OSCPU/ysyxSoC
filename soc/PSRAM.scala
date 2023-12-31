@@ -17,8 +17,8 @@ class QSPIIO extends Bundle {
 
 class psram_top_apb extends BlackBox {
   val io = IO(new Bundle {
-    val clk = Input(Clock())
-    val resetn = Input(Bool())
+    val clock = Input(Clock())
+    val reset = Input(Reset())
     val in = Flipped(new APBBundle(APBBundleParameters(addrBits = 32, dataBits = 32)))
     val qspi = new QSPIIO
   })
@@ -50,8 +50,8 @@ class APBPSRAM(address: Seq[AddressSet])(implicit p: Parameters) extends LazyMod
     val qspi_bundle = IO(new QSPIIO)
 
     val mpsram = Module(new psram_top_apb)
-    mpsram.io.clk := clock
-    mpsram.io.resetn := ~reset.asBool
+    mpsram.io.clock := clock
+    mpsram.io.reset := reset
     mpsram.io.in <> in
     qspi_bundle <> mpsram.io.qspi
   }
