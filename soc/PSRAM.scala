@@ -28,6 +28,11 @@ class psram extends BlackBox {
   val io = IO(Flipped(new QSPIIO))
 }
 
+class psramChisel extends RawModule {
+  val io = IO(Flipped(new QSPIIO))
+  val di = TriStateInBuf(io.dio, 0.U, false.B) // change this if you need
+}
+
 class APBPSRAM(address: Seq[AddressSet])(implicit p: Parameters) extends LazyModule {
   val node = APBSlaveNode(Seq(APBSlavePortParameters(
     Seq(APBSlaveParameters(
