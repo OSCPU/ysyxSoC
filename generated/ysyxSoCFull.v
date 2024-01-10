@@ -2568,9 +2568,11 @@ module APBUart16550(
   input  [28:0] auto_in_paddr,	// @[src/main/scala/diplomacy/LazyModule.scala:367:18]
   input  [31:0] auto_in_pwdata,	// @[src/main/scala/diplomacy/LazyModule.scala:367:18]
   input  [3:0]  auto_in_pstrb,	// @[src/main/scala/diplomacy/LazyModule.scala:367:18]
+  input         uart_rx,	// @[src/main/scala/ysyxSoC/Uart16550.scala:39:18]
   output        auto_in_pready,	// @[src/main/scala/diplomacy/LazyModule.scala:367:18]
                 auto_in_pslverr,	// @[src/main/scala/diplomacy/LazyModule.scala:367:18]
-  output [31:0] auto_in_prdata	// @[src/main/scala/diplomacy/LazyModule.scala:367:18]
+  output [31:0] auto_in_prdata,	// @[src/main/scala/diplomacy/LazyModule.scala:367:18]
+  output        uart_tx	// @[src/main/scala/ysyxSoC/Uart16550.scala:39:18]
 );
 
   wire [31:0] nodeIn_prdata;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17]
@@ -2593,11 +2595,11 @@ module APBUart16550(
     .in_pprot   (3'h1),	// @[src/main/scala/diplomacy/LazyModule.scala:367:18, src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/Uart16550.scala:41:23]
     .in_pwdata  (nodeIn_pwdata),	// @[src/main/scala/diplomacy/Nodes.scala:1214:17]
     .in_pstrb   (nodeIn_pstrb),	// @[src/main/scala/diplomacy/Nodes.scala:1214:17]
-    .uart_rx    (1'h0),	// @[src/main/scala/ysyxSoC/Uart16550.scala:39:18, :41:23]
+    .uart_rx    (uart_rx),
     .in_pready  (nodeIn_pready),
     .in_pslverr (nodeIn_pslverr),
     .in_prdata  (nodeIn_prdata),
-    .uart_tx    (/* unused */)
+    .uart_tx    (uart_tx)
   );
   assign auto_in_pready = nodeIn_pready;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17]
   assign auto_in_pslverr = nodeIn_pslverr;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17]
@@ -3353,132 +3355,120 @@ module AXI4ToAPB(
   wire        nodeOut_pready = auto_out_pready;	// @[src/main/scala/diplomacy/Nodes.scala:1205:17]
   wire        nodeOut_pslverr = auto_out_pslverr;	// @[src/main/scala/diplomacy/Nodes.scala:1205:17]
   wire [31:0] nodeOut_prdata = auto_out_prdata;	// @[src/main/scala/diplomacy/Nodes.scala:1205:17]
-  reg  [1:0]  casez_tmp;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:52:22, :53:33]
+  reg  [1:0]  casez_tmp;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:54:22, :55:33]
   wire [2:0]  nodeOut_pprot = 3'h1;	// @[src/main/scala/diplomacy/Nodes.scala:1205:17]
   wire        nodeIn_rlast = 1'h1;	// @[src/main/scala/diplomacy/LazyModule.scala:367:18, src/main/scala/diplomacy/Nodes.scala:1214:17]
+  wire        accept_write;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:52:73]
   wire [1:0]  resp_hold;	// @[src/main/scala/util/package.scala:80:42]
+  wire        accept_read;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:51:44]
   wire        is_write;	// @[src/main/scala/util/package.scala:80:42]
   reg  [1:0]  state;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26]
-  wire        _is_write_T_2 = ~nodeIn_arvalid & (nodeIn_awvalid | nodeIn_wvalid);	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:51:{23,33,46}]
-  wire        _nodeIn_awready_T = state == 2'h0;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26, :51:77]
-  wire        nodeIn_awready;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17]
-  assign nodeIn_awready = _nodeIn_awready_T;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:51:77]
-  wire        nodeIn_arready;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17]
-  assign nodeIn_arready = _nodeIn_awready_T;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:51:77]
+  wire        _is_write_T = state == 2'h0;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26, :51:32]
+  assign accept_read = _is_write_T & nodeIn_arvalid;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:51:{32,44}]
+  wire        nodeIn_arready = accept_read;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:51:44]
+  assign accept_write = ~accept_read & _is_write_T & nodeIn_awvalid & nodeIn_wvalid;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:51:{32,44}, :52:{26,73}]
+  wire        nodeIn_awready = accept_write;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:52:73]
+  wire        nodeIn_wready = accept_write;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:52:73]
   reg         is_write_r;	// @[src/main/scala/util/package.scala:80:63]
-  assign is_write = _nodeIn_awready_T ? _is_write_T_2 : is_write_r;	// @[src/main/scala/util/package.scala:80:{42,63}, src/main/scala/ysyxSoC/AXI4ToAPB.scala:51:{33,77}]
+  assign is_write = _is_write_T ? accept_write : is_write_r;	// @[src/main/scala/util/package.scala:80:{42,63}, src/main/scala/ysyxSoC/AXI4ToAPB.scala:51:32, :52:73]
   wire        nodeOut_pwrite = is_write;	// @[src/main/scala/diplomacy/Nodes.scala:1205:17, src/main/scala/util/package.scala:80:42]
   wire        nodeIn_bvalid;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17]
   wire        nodeIn_rvalid;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17]
-  always_comb begin	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26, :51:77, :52:22, :53:33, :54:33, :55:33, :56:43]
-    casez (state)	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26, :51:77, :52:22, :53:33, :54:33, :55:33, :56:43]
+  always_comb begin	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26, :51:32, :54:22, :55:33, :56:33, :57:43]
+    casez (state)	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26, :51:32, :54:22, :55:33, :56:33, :57:43]
       2'b00:
-        casez_tmp =
-          nodeIn_arvalid
-            ? 2'h2
-            : nodeIn_awvalid ? (nodeIn_wvalid ? 2'h2 : 2'h1) : 2'h0;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26, :51:77, :52:22, :53:{33,39,65,79}, :54:33, :55:33, :56:43]
+        casez_tmp = {1'h0, nodeIn_arvalid | nodeIn_awvalid & nodeIn_wvalid};	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26, :51:32, :54:22, :55:{33,39,49,62}, :56:33, :57:43]
       2'b01:
-        casez_tmp = nodeIn_wvalid ? 2'h2 : 2'h1;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26, :51:77, :52:22, :53:{33,79}, :54:{33,39}, :55:33, :56:43]
-      2'b10:
         casez_tmp =
           nodeOut_pready
-            ? (nodeIn_rready & nodeIn_rvalid | nodeIn_bready & nodeIn_bvalid
-                 ? 2'h0
-                 : 2'h3)
-            : 2'h2;	// @[src/main/scala/chisel3/util/Decoupled.scala:52:35, src/main/scala/diplomacy/Nodes.scala:1205:17, :1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26, :51:77, :52:22, :53:{33,79}, :54:33, :55:{33,39,55,63}, :56:43]
-      default:
+            ? {~(nodeIn_rready & nodeIn_rvalid | nodeIn_bready & nodeIn_bvalid), 1'h0}
+            : 2'h1;	// @[src/main/scala/chisel3/util/Decoupled.scala:52:35, src/main/scala/diplomacy/Nodes.scala:1205:17, :1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26, :51:32, :54:22, :55:{33,39}, :56:{33,39,55,63}, :57:43]
+      2'b10:
         casez_tmp =
-          nodeIn_rready & nodeIn_rvalid | nodeIn_bready & nodeIn_bvalid ? 2'h0 : 2'h3;	// @[src/main/scala/chisel3/util/Decoupled.scala:52:35, src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26, :51:77, :52:22, :53:33, :54:33, :55:{33,55}, :56:{43,49,57}]
-    endcase	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26, :51:77, :52:22, :53:33, :54:33, :55:33, :56:43]
+          {~(nodeIn_rready & nodeIn_rvalid | nodeIn_bready & nodeIn_bvalid), 1'h0};	// @[src/main/scala/chisel3/util/Decoupled.scala:52:35, src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26, :51:32, :54:22, :55:{33,39}, :56:33, :57:{43,49,57}]
+      default:
+        casez_tmp = state;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26, :51:32, :54:22, :55:33, :56:33, :57:43]
+    endcase	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26, :51:32, :54:22, :55:33, :56:33, :57:43]
   end // always_comb
-  `ifndef SYNTHESIS	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:60:13]
-    always @(posedge clock) begin	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:60:13]
-      if (~reset & nodeIn_arvalid & (|nodeIn_arlen)) begin	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:60:{13,40}]
-        if (`ASSERT_VERBOSE_COND_)	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:60:13]
-          $error("Assertion failed\n    at AXI4ToAPB.scala:60 assert(!(ar.valid && ar.bits.len =/= 0.U))\n");	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:60:13]
-        if (`STOP_COND_)	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:60:13]
-          $fatal;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:60:13]
-      end
-      if (~reset & nodeIn_awvalid & (|nodeIn_awlen)) begin	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:60:13, :61:{13,40}]
+  `ifndef SYNTHESIS	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:61:13]
+    always @(posedge clock) begin	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:61:13]
+      if (~reset & nodeIn_arvalid & (|nodeIn_arlen)) begin	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:61:{13,40}]
         if (`ASSERT_VERBOSE_COND_)	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:61:13]
-          $error("Assertion failed\n    at AXI4ToAPB.scala:61 assert(!(aw.valid && aw.bits.len =/= 0.U))\n");	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:61:13]
+          $error("Assertion failed\n    at AXI4ToAPB.scala:61 assert(!(ar.valid && ar.bits.len =/= 0.U))\n");	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:61:13]
         if (`STOP_COND_)	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:61:13]
           $fatal;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:61:13]
       end
-      if (~reset & nodeIn_arvalid & nodeIn_arsize > 3'h2) begin	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:60:13, :63:{13,41}]
-        if (`ASSERT_VERBOSE_COND_)	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:63:13]
-          $error("Assertion failed\n    at AXI4ToAPB.scala:63 assert(!(ar.valid && ar.bits.size > \"b10\".U))\n");	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:63:13]
-        if (`STOP_COND_)	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:63:13]
-          $fatal;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:63:13]
+      if (~reset & nodeIn_awvalid & (|nodeIn_awlen)) begin	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:61:13, :62:{13,40}]
+        if (`ASSERT_VERBOSE_COND_)	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:62:13]
+          $error("Assertion failed\n    at AXI4ToAPB.scala:62 assert(!(aw.valid && aw.bits.len =/= 0.U))\n");	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:62:13]
+        if (`STOP_COND_)	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:62:13]
+          $fatal;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:62:13]
       end
-      if (~reset & nodeIn_awvalid & nodeIn_awsize > 3'h2) begin	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:60:13, :64:{13,41}]
+      if (~reset & nodeIn_arvalid & nodeIn_arsize > 3'h2) begin	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:61:13, :64:{13,41}]
         if (`ASSERT_VERBOSE_COND_)	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:64:13]
-          $error("Assertion failed\n    at AXI4ToAPB.scala:64 assert(!(aw.valid && aw.bits.size > \"b10\".U))\n");	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:64:13]
+          $error("Assertion failed\n    at AXI4ToAPB.scala:64 assert(!(ar.valid && ar.bits.size > \"b10\".U))\n");	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:64:13]
         if (`STOP_COND_)	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:64:13]
           $fatal;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:64:13]
       end
+      if (~reset & nodeIn_awvalid & nodeIn_awsize > 3'h2) begin	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:61:13, :65:{13,41}]
+        if (`ASSERT_VERBOSE_COND_)	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:65:13]
+          $error("Assertion failed\n    at AXI4ToAPB.scala:65 assert(!(aw.valid && aw.bits.size > \"b10\".U))\n");	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:65:13]
+        if (`STOP_COND_)	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:65:13]
+          $fatal;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:65:13]
+      end
     end // always @(posedge)
   `endif // not def SYNTHESIS
-  reg  [3:0]  rid_reg;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:66:33]
-  wire [3:0]  nodeIn_rid = rid_reg;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:66:33]
-  reg  [3:0]  bid_reg;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:67:33]
-  wire [3:0]  nodeIn_bid = bid_reg;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:67:33]
-  wire        _araddr_reg_T_1 = nodeIn_arvalid & _nodeIn_awready_T;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:51:77, :68:58]
+  reg  [3:0]  rid_reg;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:67:33]
+  wire [3:0]  nodeIn_rid = rid_reg;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:67:33]
+  reg  [3:0]  bid_reg;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:68:33]
+  wire [3:0]  nodeIn_bid = bid_reg;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:68:33]
   reg  [31:0] araddr_reg_r;	// @[src/main/scala/util/package.scala:80:63]
-  wire [31:0] araddr_reg = _araddr_reg_T_1 ? nodeIn_araddr : araddr_reg_r;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/util/package.scala:80:{42,63}, src/main/scala/ysyxSoC/AXI4ToAPB.scala:68:58]
-  wire        _awaddr_reg_T_1 = nodeIn_awvalid & _nodeIn_awready_T;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:51:77, :69:58]
+  wire [31:0] araddr_reg = accept_read ? nodeIn_araddr : araddr_reg_r;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/util/package.scala:80:{42,63}, src/main/scala/ysyxSoC/AXI4ToAPB.scala:51:44]
   reg  [31:0] awaddr_reg_r;	// @[src/main/scala/util/package.scala:80:63]
-  wire [31:0] awaddr_reg = _awaddr_reg_T_1 ? nodeIn_awaddr : awaddr_reg_r;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/util/package.scala:80:{42,63}, src/main/scala/ysyxSoC/AXI4ToAPB.scala:69:58]
-  wire        _nodeIn_wready_T_1 = state == 2'h1;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26, :53:79, :70:91]
-  wire        _wdata_reg_T_3 =
-    nodeIn_wvalid & (_nodeIn_awready_T | _nodeIn_wready_T_1);	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:51:77, :70:{58,81,91}]
+  wire [31:0] awaddr_reg = accept_write ? nodeIn_awaddr : awaddr_reg_r;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/util/package.scala:80:{42,63}, src/main/scala/ysyxSoC/AXI4ToAPB.scala:52:73]
   reg  [63:0] wdata_reg_r;	// @[src/main/scala/util/package.scala:80:63]
-  wire [63:0] wdata_reg = _wdata_reg_T_3 ? nodeIn_wdata : wdata_reg_r;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/util/package.scala:80:{42,63}, src/main/scala/ysyxSoC/AXI4ToAPB.scala:70:58]
-  wire        _wstrb_reg_T_3 =
-    nodeIn_wvalid & (_nodeIn_awready_T | _nodeIn_wready_T_1);	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:51:77, :70:91, :71:{58,81}]
+  wire [63:0] wdata_reg = accept_write ? nodeIn_wdata : wdata_reg_r;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/util/package.scala:80:{42,63}, src/main/scala/ysyxSoC/AXI4ToAPB.scala:52:73]
   reg  [7:0]  wstrb_reg_r;	// @[src/main/scala/util/package.scala:80:63]
-  wire [7:0]  wstrb_reg = _wstrb_reg_T_3 ? nodeIn_wstrb : wstrb_reg_r;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/util/package.scala:80:{42,63}, src/main/scala/ysyxSoC/AXI4ToAPB.scala:71:58]
+  wire [7:0]  wstrb_reg = accept_write ? nodeIn_wstrb : wstrb_reg_r;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/util/package.scala:80:{42,63}, src/main/scala/ysyxSoC/AXI4ToAPB.scala:52:73]
   wire        nodeOut_penable;	// @[src/main/scala/diplomacy/Nodes.scala:1205:17]
-  wire        nodeOut_psel =
-    _nodeIn_awready_T & (nodeIn_arvalid | nodeIn_awvalid & nodeIn_wvalid)
-    | nodeOut_penable;	// @[src/main/scala/diplomacy/Nodes.scala:1205:17, :1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:51:77, :73:{42,55,68,82}]
-  assign nodeOut_penable = state == 2'h2;	// @[src/main/scala/diplomacy/Nodes.scala:1205:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26, :53:79, :74:28]
-  wire [31:0] nodeOut_paddr = is_write ? awaddr_reg : araddr_reg;	// @[src/main/scala/diplomacy/Nodes.scala:1205:17, src/main/scala/util/package.scala:80:42, src/main/scala/ysyxSoC/AXI4ToAPB.scala:76:25]
-  wire [31:0] nodeOut_pwdata = awaddr_reg[2] ? wdata_reg[63:32] : wdata_reg[31:0];	// @[src/main/scala/diplomacy/Nodes.scala:1205:17, src/main/scala/util/package.scala:80:42, src/main/scala/ysyxSoC/AXI4ToAPB.scala:78:{25,36,50,68}]
+  wire        nodeOut_psel = accept_read | accept_write | nodeOut_penable;	// @[src/main/scala/diplomacy/Nodes.scala:1205:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:51:44, :52:73, :74:52]
+  assign nodeOut_penable = state == 2'h1;	// @[src/main/scala/diplomacy/Nodes.scala:1205:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26, :55:39, :75:28]
+  wire [31:0] nodeOut_paddr = is_write ? awaddr_reg : araddr_reg;	// @[src/main/scala/diplomacy/Nodes.scala:1205:17, src/main/scala/util/package.scala:80:42, src/main/scala/ysyxSoC/AXI4ToAPB.scala:77:25]
+  wire [31:0] nodeOut_pwdata = awaddr_reg[2] ? wdata_reg[63:32] : wdata_reg[31:0];	// @[src/main/scala/diplomacy/Nodes.scala:1205:17, src/main/scala/util/package.scala:80:42, src/main/scala/ysyxSoC/AXI4ToAPB.scala:79:{25,36,50,68}]
   wire [3:0]  nodeOut_pstrb =
-    is_write ? (awaddr_reg[2] ? wstrb_reg[7:4] : wstrb_reg[3:0]) : 4'h0;	// @[src/main/scala/diplomacy/Nodes.scala:1205:17, src/main/scala/util/package.scala:80:42, src/main/scala/ysyxSoC/AXI4ToAPB.scala:78:36, :79:{25,39,64,80}]
-  wire        nodeIn_wready = _nodeIn_awready_T | _nodeIn_wready_T_1;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:51:77, :70:91, :82:38]
-  wire [1:0]  resp = {nodeOut_pslverr, 1'h0};	// @[src/main/scala/diplomacy/Nodes.scala:1205:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:85:21]
+    is_write ? (awaddr_reg[2] ? wstrb_reg[7:4] : wstrb_reg[3:0]) : 4'h0;	// @[src/main/scala/diplomacy/Nodes.scala:1205:17, src/main/scala/util/package.scala:80:42, src/main/scala/ysyxSoC/AXI4ToAPB.scala:79:36, :80:{25,39,64,80}]
+  wire [1:0]  resp = {nodeOut_pslverr, 1'h0};	// @[src/main/scala/diplomacy/Nodes.scala:1205:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:55:39, :86:21]
   reg  [1:0]  resp_hold_r;	// @[src/main/scala/util/package.scala:80:63]
-  assign resp_hold = nodeOut_penable ? resp : resp_hold_r;	// @[src/main/scala/diplomacy/Nodes.scala:1205:17, src/main/scala/util/package.scala:80:{42,63}, src/main/scala/ysyxSoC/AXI4ToAPB.scala:85:21]
+  assign resp_hold = nodeOut_penable ? resp : resp_hold_r;	// @[src/main/scala/diplomacy/Nodes.scala:1205:17, src/main/scala/util/package.scala:80:{42,63}, src/main/scala/ysyxSoC/AXI4ToAPB.scala:86:21]
   wire [1:0]  nodeIn_bresp = resp_hold;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/util/package.scala:80:42]
   wire [1:0]  nodeIn_rresp = resp_hold;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/util/package.scala:80:42]
-  assign nodeIn_rvalid = ~is_write & (nodeOut_penable & nodeOut_pready | (&state));	// @[src/main/scala/diplomacy/Nodes.scala:1205:17, :1214:17, src/main/scala/util/package.scala:80:42, src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26, :87:{19,29,57,72,82}]
+  wire        _nodeIn_bvalid_T_2 = state == 2'h2;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26, :56:55, :88:82]
+  assign nodeIn_rvalid =
+    ~is_write & (nodeOut_penable & nodeOut_pready | _nodeIn_bvalid_T_2);	// @[src/main/scala/diplomacy/Nodes.scala:1205:17, :1214:17, src/main/scala/util/package.scala:80:42, src/main/scala/ysyxSoC/AXI4ToAPB.scala:88:{19,29,57,72,82}]
   reg  [31:0] nodeIn_rdata_r;	// @[src/main/scala/util/package.scala:80:63]
   wire [63:0] nodeIn_rdata =
-    {2{nodeOut_penable ? nodeOut_prdata : nodeIn_rdata_r}};	// @[src/main/scala/diplomacy/Nodes.scala:1205:17, :1214:17, src/main/scala/util/package.scala:80:{42,63}, src/main/scala/ysyxSoC/AXI4ToAPB.scala:88:26]
-  assign nodeIn_bvalid = is_write & (nodeOut_penable & nodeOut_pready | (&state));	// @[src/main/scala/diplomacy/Nodes.scala:1205:17, :1214:17, src/main/scala/util/package.scala:80:42, src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26, :87:82, :93:{28,56,71}]
+    {2{nodeOut_penable ? nodeOut_prdata : nodeIn_rdata_r}};	// @[src/main/scala/diplomacy/Nodes.scala:1205:17, :1214:17, src/main/scala/util/package.scala:80:{42,63}, src/main/scala/ysyxSoC/AXI4ToAPB.scala:89:26]
+  assign nodeIn_bvalid =
+    is_write & (nodeOut_penable & nodeOut_pready | _nodeIn_bvalid_T_2);	// @[src/main/scala/diplomacy/Nodes.scala:1205:17, :1214:17, src/main/scala/util/package.scala:80:42, src/main/scala/ysyxSoC/AXI4ToAPB.scala:88:82, :94:{28,56,71}]
   always @(posedge clock) begin
     if (reset)
       state <= 2'h0;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26]
     else
-      state <= casez_tmp;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26, :52:22, :53:33]
-    if (_nodeIn_awready_T)	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:51:77]
-      is_write_r <= _is_write_T_2;	// @[src/main/scala/util/package.scala:80:63, src/main/scala/ysyxSoC/AXI4ToAPB.scala:51:33]
-    if (nodeIn_arvalid & _nodeIn_awready_T)	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:51:77, :66:55]
-      rid_reg <= nodeIn_arid;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:66:33]
-    if (nodeIn_awvalid & _nodeIn_awready_T)	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:51:77, :67:55]
-      bid_reg <= nodeIn_awid;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:67:33]
-    if (_araddr_reg_T_1)	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:68:58]
+      state <= casez_tmp;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26, :54:22, :55:33]
+    if (_is_write_T)	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:51:32]
+      is_write_r <= accept_write;	// @[src/main/scala/util/package.scala:80:63, src/main/scala/ysyxSoC/AXI4ToAPB.scala:52:73]
+    if (accept_read) begin	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:51:44]
+      rid_reg <= nodeIn_arid;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:67:33]
       araddr_reg_r <= nodeIn_araddr;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/util/package.scala:80:63]
-    if (_awaddr_reg_T_1)	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:69:58]
+    end
+    if (accept_write) begin	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:52:73]
+      bid_reg <= nodeIn_awid;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:68:33]
       awaddr_reg_r <= nodeIn_awaddr;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/util/package.scala:80:63]
-    if (_wdata_reg_T_3)	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:70:58]
       wdata_reg_r <= nodeIn_wdata;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/util/package.scala:80:63]
-    if (_wstrb_reg_T_3)	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:71:58]
       wstrb_reg_r <= nodeIn_wstrb;	// @[src/main/scala/diplomacy/Nodes.scala:1214:17, src/main/scala/util/package.scala:80:63]
-    if (nodeOut_penable) begin	// @[src/main/scala/diplomacy/Nodes.scala:1205:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:74:28]
-      resp_hold_r <= resp;	// @[src/main/scala/util/package.scala:80:63, src/main/scala/ysyxSoC/AXI4ToAPB.scala:85:21]
+    end
+    if (nodeOut_penable) begin	// @[src/main/scala/diplomacy/Nodes.scala:1205:17, src/main/scala/ysyxSoC/AXI4ToAPB.scala:75:28]
+      resp_hold_r <= resp;	// @[src/main/scala/util/package.scala:80:63, src/main/scala/ysyxSoC/AXI4ToAPB.scala:86:21]
       nodeIn_rdata_r <= nodeOut_prdata;	// @[src/main/scala/diplomacy/Nodes.scala:1205:17, src/main/scala/util/package.scala:80:63]
     end
   end // always @(posedge)
@@ -3497,8 +3487,8 @@ module AXI4ToAPB(
         end
         state = _RANDOM[3'h0][1:0];	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26]
         is_write_r = _RANDOM[3'h0][2];	// @[src/main/scala/util/package.scala:80:63, src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26]
-        rid_reg = _RANDOM[3'h0][6:3];	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26, :66:33]
-        bid_reg = _RANDOM[3'h0][10:7];	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26, :67:33]
+        rid_reg = _RANDOM[3'h0][6:3];	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26, :67:33]
+        bid_reg = _RANDOM[3'h0][10:7];	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26, :68:33]
         araddr_reg_r = {_RANDOM[3'h0][31:11], _RANDOM[3'h1][10:0]};	// @[src/main/scala/util/package.scala:80:63, src/main/scala/ysyxSoC/AXI4ToAPB.scala:50:26]
         awaddr_reg_r = {_RANDOM[3'h1][31:11], _RANDOM[3'h2][10:0]};	// @[src/main/scala/util/package.scala:80:63]
         wdata_reg_r = {_RANDOM[3'h2][31:11], _RANDOM[3'h3], _RANDOM[3'h4][10:0]};	// @[src/main/scala/util/package.scala:80:63]
@@ -3606,6 +3596,7 @@ module ysyxSoCASIC(
   input         clock,
                 reset,
                 spi_miso,	// @[src/main/scala/ysyxSoC/SoC.scala:77:17]
+                uart_rx,	// @[src/main/scala/ysyxSoC/SoC.scala:78:18]
   inout  [3:0]  psram_dio,	// @[src/main/scala/ysyxSoC/SoC.scala:79:19]
   inout  [15:0] sdram_dq,	// @[src/main/scala/ysyxSoC/SoC.scala:80:19]
   input  [15:0] gpio_in,	// @[src/main/scala/ysyxSoC/SoC.scala:81:18]
@@ -3614,6 +3605,7 @@ module ysyxSoCASIC(
   output        spi_sck,	// @[src/main/scala/ysyxSoC/SoC.scala:77:17]
   output [7:0]  spi_ss,	// @[src/main/scala/ysyxSoC/SoC.scala:77:17]
   output        spi_mosi,	// @[src/main/scala/ysyxSoC/SoC.scala:77:17]
+                uart_tx,	// @[src/main/scala/ysyxSoC/SoC.scala:78:18]
                 psram_sck,	// @[src/main/scala/ysyxSoC/SoC.scala:79:19]
                 psram_ce_n,	// @[src/main/scala/ysyxSoC/SoC.scala:79:19]
                 sdram_clk,	// @[src/main/scala/ysyxSoC/SoC.scala:80:19]
@@ -3643,22 +3635,22 @@ module ysyxSoCASIC(
 );
 
   wire        _cpu_reset_chain_io_q;	// @[src/main/scala/util/ShiftReg.scala:45:23]
-  wire        _axi42apb_auto_in_awready;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
-  wire        _axi42apb_auto_in_wready;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
-  wire        _axi42apb_auto_in_bvalid;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
-  wire [3:0]  _axi42apb_auto_in_bid;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
-  wire [1:0]  _axi42apb_auto_in_bresp;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
-  wire        _axi42apb_auto_in_arready;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
-  wire        _axi42apb_auto_in_rvalid;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
-  wire [3:0]  _axi42apb_auto_in_rid;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
-  wire [63:0] _axi42apb_auto_in_rdata;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
-  wire [1:0]  _axi42apb_auto_in_rresp;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
-  wire        _axi42apb_auto_out_psel;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
-  wire        _axi42apb_auto_out_penable;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
-  wire        _axi42apb_auto_out_pwrite;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
-  wire [31:0] _axi42apb_auto_out_paddr;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
-  wire [31:0] _axi42apb_auto_out_pwdata;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
-  wire [3:0]  _axi42apb_auto_out_pstrb;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
+  wire        _axi42apb_auto_in_awready;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
+  wire        _axi42apb_auto_in_wready;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
+  wire        _axi42apb_auto_in_bvalid;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
+  wire [3:0]  _axi42apb_auto_in_bid;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
+  wire [1:0]  _axi42apb_auto_in_bresp;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
+  wire        _axi42apb_auto_in_arready;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
+  wire        _axi42apb_auto_in_rvalid;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
+  wire [3:0]  _axi42apb_auto_in_rid;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
+  wire [63:0] _axi42apb_auto_in_rdata;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
+  wire [1:0]  _axi42apb_auto_in_rresp;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
+  wire        _axi42apb_auto_out_psel;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
+  wire        _axi42apb_auto_out_penable;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
+  wire        _axi42apb_auto_out_pwrite;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
+  wire [31:0] _axi42apb_auto_out_paddr;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
+  wire [31:0] _axi42apb_auto_out_pwdata;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
+  wire [3:0]  _axi42apb_auto_out_pstrb;	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
   wire        _lsdram_auto_in_pready;	// @[src/main/scala/ysyxSoC/SoC.scala:44:26]
   wire        _lsdram_auto_in_pslverr;	// @[src/main/scala/ysyxSoC/SoC.scala:44:26]
   wire [31:0] _lsdram_auto_in_prdata;	// @[src/main/scala/ysyxSoC/SoC.scala:44:26]
@@ -3855,16 +3847,16 @@ module ysyxSoCASIC(
     .auto_out_1_rvalid       (_lmrom_auto_in_rvalid),	// @[src/main/scala/ysyxSoC/SoC.scala:42:25]
     .auto_out_1_rid     (_lmrom_auto_in_rid),	// @[src/main/scala/ysyxSoC/SoC.scala:42:25]
     .auto_out_1_rdata   (_lmrom_auto_in_rdata),	// @[src/main/scala/ysyxSoC/SoC.scala:42:25]
-    .auto_out_0_awready      (_axi42apb_auto_in_awready),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
-    .auto_out_0_wready       (_axi42apb_auto_in_wready),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
-    .auto_out_0_bvalid       (_axi42apb_auto_in_bvalid),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
-    .auto_out_0_bid     (_axi42apb_auto_in_bid),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
-    .auto_out_0_bresp   (_axi42apb_auto_in_bresp),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
-    .auto_out_0_arready      (_axi42apb_auto_in_arready),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
-    .auto_out_0_rvalid       (_axi42apb_auto_in_rvalid),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
-    .auto_out_0_rid     (_axi42apb_auto_in_rid),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
-    .auto_out_0_rdata   (_axi42apb_auto_in_rdata),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
-    .auto_out_0_rresp   (_axi42apb_auto_in_rresp),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
+    .auto_out_0_awready      (_axi42apb_auto_in_awready),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
+    .auto_out_0_wready       (_axi42apb_auto_in_wready),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
+    .auto_out_0_bvalid       (_axi42apb_auto_in_bvalid),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
+    .auto_out_0_bid     (_axi42apb_auto_in_bid),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
+    .auto_out_0_bresp   (_axi42apb_auto_in_bresp),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
+    .auto_out_0_arready      (_axi42apb_auto_in_arready),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
+    .auto_out_0_rvalid       (_axi42apb_auto_in_rvalid),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
+    .auto_out_0_rid     (_axi42apb_auto_in_rid),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
+    .auto_out_0_rdata   (_axi42apb_auto_in_rdata),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
+    .auto_out_0_rresp   (_axi42apb_auto_in_rresp),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
     .auto_in_awready         (_axi4xbar_auto_in_awready),
     .auto_in_wready          (_axi4xbar_auto_in_wready),
     .auto_in_bvalid          (_axi4xbar_auto_in_bvalid),
@@ -3932,12 +3924,12 @@ module ysyxSoCASIC(
     .auto_out_0_rready       (_axi4xbar_auto_out_0_rready)
   );
   APBFanout apbxbar (	// @[src/main/scala/ysyxSoC/SoC.scala:28:27]
-    .auto_in_psel       (_axi42apb_auto_out_psel),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
-    .auto_in_penable    (_axi42apb_auto_out_penable),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
-    .auto_in_pwrite     (_axi42apb_auto_out_pwrite),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
-    .auto_in_paddr      (_axi42apb_auto_out_paddr),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
-    .auto_in_pwdata     (_axi42apb_auto_out_pwdata),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
-    .auto_in_pstrb      (_axi42apb_auto_out_pstrb),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
+    .auto_in_psel       (_axi42apb_auto_out_psel),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
+    .auto_in_penable    (_axi42apb_auto_out_penable),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
+    .auto_in_pwrite     (_axi42apb_auto_out_pwrite),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
+    .auto_in_paddr      (_axi42apb_auto_out_paddr),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
+    .auto_in_pwdata     (_axi42apb_auto_out_pwdata),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
+    .auto_in_pstrb      (_axi42apb_auto_out_pstrb),	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
     .auto_out_6_pready  (_lvga_auto_in_pready),	// @[src/main/scala/ysyxSoC/SoC.scala:36:24]
     .auto_out_6_pslverr (_lvga_auto_in_pslverr),	// @[src/main/scala/ysyxSoC/SoC.scala:36:24]
     .auto_out_6_prdata  (_lvga_auto_in_prdata),	// @[src/main/scala/ysyxSoC/SoC.scala:36:24]
@@ -4047,9 +4039,11 @@ module ysyxSoCASIC(
     .auto_in_paddr   (_apbxbar_auto_out_1_paddr),	// @[src/main/scala/ysyxSoC/SoC.scala:28:27]
     .auto_in_pwdata  (_apbxbar_auto_out_1_pwdata),	// @[src/main/scala/ysyxSoC/SoC.scala:28:27]
     .auto_in_pstrb   (_apbxbar_auto_out_1_pstrb),	// @[src/main/scala/ysyxSoC/SoC.scala:28:27]
+    .uart_rx         (uart_rx),
     .auto_in_pready  (_luart_auto_in_pready),
     .auto_in_pslverr (_luart_auto_in_pslverr),
-    .auto_in_prdata  (_luart_auto_in_prdata)
+    .auto_in_prdata  (_luart_auto_in_prdata),
+    .uart_tx         (uart_tx)
   );
   APBGPIO lgpio (	// @[src/main/scala/ysyxSoC/SoC.scala:34:25]
     .clock             (clock),
@@ -4221,7 +4215,7 @@ module ysyxSoCASIC(
     .sdram_bundle_ba  (sdram_ba),
     .sdram_bundle_dqm (sdram_dqm)
   );
-  AXI4ToAPB axi42apb (	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:102:30]
+  AXI4ToAPB axi42apb (	// @[src/main/scala/ysyxSoC/AXI4ToAPB.scala:103:30]
     .clock                 (clock),
     .reset                 (reset),
     .auto_in_awvalid      (_axi4xbar_auto_out_0_awvalid),	// @[src/main/scala/amba/axi4/Xbar.scala:230:30]
@@ -4280,28 +4274,30 @@ endmodule
 module ysyxSoCFull(
   input         clock,
                 reset,
-  input  [15:0] externalPins_gpio_in,	// @[src/main/scala/ysyxSoC/SoC.scala:142:26]
-  input         externalPins_ps2_clk,	// @[src/main/scala/ysyxSoC/SoC.scala:142:26]
-                externalPins_ps2_data,	// @[src/main/scala/ysyxSoC/SoC.scala:142:26]
-  output [15:0] externalPins_gpio_out,	// @[src/main/scala/ysyxSoC/SoC.scala:142:26]
-  output [7:0]  externalPins_gpio_seg_0,	// @[src/main/scala/ysyxSoC/SoC.scala:142:26]
-                externalPins_gpio_seg_1,	// @[src/main/scala/ysyxSoC/SoC.scala:142:26]
-                externalPins_gpio_seg_2,	// @[src/main/scala/ysyxSoC/SoC.scala:142:26]
-                externalPins_gpio_seg_3,	// @[src/main/scala/ysyxSoC/SoC.scala:142:26]
-                externalPins_gpio_seg_4,	// @[src/main/scala/ysyxSoC/SoC.scala:142:26]
-                externalPins_gpio_seg_5,	// @[src/main/scala/ysyxSoC/SoC.scala:142:26]
-                externalPins_gpio_seg_6,	// @[src/main/scala/ysyxSoC/SoC.scala:142:26]
-                externalPins_gpio_seg_7,	// @[src/main/scala/ysyxSoC/SoC.scala:142:26]
-                externalPins_vga_r,	// @[src/main/scala/ysyxSoC/SoC.scala:142:26]
-                externalPins_vga_g,	// @[src/main/scala/ysyxSoC/SoC.scala:142:26]
-                externalPins_vga_b,	// @[src/main/scala/ysyxSoC/SoC.scala:142:26]
-  output        externalPins_vga_hsync,	// @[src/main/scala/ysyxSoC/SoC.scala:142:26]
-                externalPins_vga_vsync,	// @[src/main/scala/ysyxSoC/SoC.scala:142:26]
-                externalPins_vga_valid	// @[src/main/scala/ysyxSoC/SoC.scala:142:26]
+  input  [15:0] externalPins_gpio_in,	// @[src/main/scala/ysyxSoC/SoC.scala:141:26]
+  input         externalPins_ps2_clk,	// @[src/main/scala/ysyxSoC/SoC.scala:141:26]
+                externalPins_ps2_data,	// @[src/main/scala/ysyxSoC/SoC.scala:141:26]
+                externalPins_uart_rx,	// @[src/main/scala/ysyxSoC/SoC.scala:141:26]
+  output [15:0] externalPins_gpio_out,	// @[src/main/scala/ysyxSoC/SoC.scala:141:26]
+  output [7:0]  externalPins_gpio_seg_0,	// @[src/main/scala/ysyxSoC/SoC.scala:141:26]
+                externalPins_gpio_seg_1,	// @[src/main/scala/ysyxSoC/SoC.scala:141:26]
+                externalPins_gpio_seg_2,	// @[src/main/scala/ysyxSoC/SoC.scala:141:26]
+                externalPins_gpio_seg_3,	// @[src/main/scala/ysyxSoC/SoC.scala:141:26]
+                externalPins_gpio_seg_4,	// @[src/main/scala/ysyxSoC/SoC.scala:141:26]
+                externalPins_gpio_seg_5,	// @[src/main/scala/ysyxSoC/SoC.scala:141:26]
+                externalPins_gpio_seg_6,	// @[src/main/scala/ysyxSoC/SoC.scala:141:26]
+                externalPins_gpio_seg_7,	// @[src/main/scala/ysyxSoC/SoC.scala:141:26]
+                externalPins_vga_r,	// @[src/main/scala/ysyxSoC/SoC.scala:141:26]
+                externalPins_vga_g,	// @[src/main/scala/ysyxSoC/SoC.scala:141:26]
+                externalPins_vga_b,	// @[src/main/scala/ysyxSoC/SoC.scala:141:26]
+  output        externalPins_vga_hsync,	// @[src/main/scala/ysyxSoC/SoC.scala:141:26]
+                externalPins_vga_vsync,	// @[src/main/scala/ysyxSoC/SoC.scala:141:26]
+                externalPins_vga_valid,	// @[src/main/scala/ysyxSoC/SoC.scala:141:26]
+                externalPins_uart_tx	// @[src/main/scala/ysyxSoC/SoC.scala:141:26]
 );
 
-  wire        _bitrev_miso;	// @[src/main/scala/ysyxSoC/SoC.scala:132:24]
-  wire        _flash_miso;	// @[src/main/scala/ysyxSoC/SoC.scala:129:23]
+  wire        _bitrev_miso;	// @[src/main/scala/ysyxSoC/SoC.scala:131:24]
+  wire        _flash_miso;	// @[src/main/scala/ysyxSoC/SoC.scala:128:23]
   wire        _asic_spi_sck;	// @[src/main/scala/ysyxSoC/SoC.scala:100:24]
   wire [7:0]  _asic_spi_ss;	// @[src/main/scala/ysyxSoC/SoC.scala:100:24]
   wire        _asic_spi_mosi;	// @[src/main/scala/ysyxSoC/SoC.scala:100:24]
@@ -4316,12 +4312,13 @@ module ysyxSoCFull(
   wire [12:0] _asic_sdram_a;	// @[src/main/scala/ysyxSoC/SoC.scala:100:24]
   wire [1:0]  _asic_sdram_ba;	// @[src/main/scala/ysyxSoC/SoC.scala:100:24]
   wire [1:0]  _asic_sdram_dqm;	// @[src/main/scala/ysyxSoC/SoC.scala:100:24]
-  wire [3:0]  _dio_wire;	// @[src/main/scala/ysyxSoC/SoC.scala:137:23]
-  wire [15:0] _dq_wire;	// @[src/main/scala/ysyxSoC/SoC.scala:139:23]
+  wire [3:0]  _dio_wire;	// @[src/main/scala/ysyxSoC/SoC.scala:136:23]
+  wire [15:0] _dq_wire;	// @[src/main/scala/ysyxSoC/SoC.scala:138:23]
   ysyxSoCASIC asic (	// @[src/main/scala/ysyxSoC/SoC.scala:100:24]
     .clock      (clock),
     .reset      (reset),
-    .spi_miso   (_bitrev_miso & _flash_miso),	// @[src/main/scala/ysyxSoC/SoC.scala:129:23, :132:24, :135:69]
+    .spi_miso   (_bitrev_miso & _flash_miso),	// @[src/main/scala/ysyxSoC/SoC.scala:128:23, :131:24, :134:69]
+    .uart_rx    (externalPins_uart_rx),
     .psram_dio  (_dio_wire),
     .sdram_dq   (_dq_wire),
     .gpio_in    (externalPins_gpio_in),
@@ -4330,6 +4327,7 @@ module ysyxSoCFull(
     .spi_sck    (_asic_spi_sck),
     .spi_ss     (_asic_spi_ss),
     .spi_mosi   (_asic_spi_mosi),
+    .uart_tx    (externalPins_uart_tx),
     .psram_sck  (_asic_psram_sck),
     .psram_ce_n (_asic_psram_ce_n),
     .sdram_clk  (_asic_sdram_clk),
@@ -4357,24 +4355,24 @@ module ysyxSoCFull(
     .vga_vsync  (externalPins_vga_vsync),
     .vga_valid  (externalPins_vga_valid)
   );
-  flash flash (	// @[src/main/scala/ysyxSoC/SoC.scala:129:23]
+  flash flash (	// @[src/main/scala/ysyxSoC/SoC.scala:128:23]
     .sck  (_asic_spi_sck),	// @[src/main/scala/ysyxSoC/SoC.scala:100:24]
-    .ss   (_asic_spi_ss[0]),	// @[src/main/scala/ysyxSoC/SoC.scala:100:24, :131:32]
+    .ss   (_asic_spi_ss[0]),	// @[src/main/scala/ysyxSoC/SoC.scala:100:24, :130:32]
     .mosi (_asic_spi_mosi),	// @[src/main/scala/ysyxSoC/SoC.scala:100:24]
     .miso (_flash_miso)
   );
-  bitrev bitrev (	// @[src/main/scala/ysyxSoC/SoC.scala:132:24]
+  bitrev bitrev (	// @[src/main/scala/ysyxSoC/SoC.scala:131:24]
     .sck  (_asic_spi_sck),	// @[src/main/scala/ysyxSoC/SoC.scala:100:24]
-    .ss   (_asic_spi_ss[7]),	// @[src/main/scala/ysyxSoC/SoC.scala:100:24, :134:33]
+    .ss   (_asic_spi_ss[7]),	// @[src/main/scala/ysyxSoC/SoC.scala:100:24, :133:33]
     .mosi (_asic_spi_mosi),	// @[src/main/scala/ysyxSoC/SoC.scala:100:24]
     .miso (_bitrev_miso)
   );
-  psram psram (	// @[src/main/scala/ysyxSoC/SoC.scala:137:23]
+  psram psram (	// @[src/main/scala/ysyxSoC/SoC.scala:136:23]
     .sck  (_asic_psram_sck),	// @[src/main/scala/ysyxSoC/SoC.scala:100:24]
     .ce_n (_asic_psram_ce_n),	// @[src/main/scala/ysyxSoC/SoC.scala:100:24]
     .dio  (_dio_wire)
   );
-  sdram sdram (	// @[src/main/scala/ysyxSoC/SoC.scala:139:23]
+  sdram sdram (	// @[src/main/scala/ysyxSoC/SoC.scala:138:23]
     .clk (_asic_sdram_clk),	// @[src/main/scala/ysyxSoC/SoC.scala:100:24]
     .cke (_asic_sdram_cke),	// @[src/main/scala/ysyxSoC/SoC.scala:100:24]
     .cs  (_asic_sdram_cs),	// @[src/main/scala/ysyxSoC/SoC.scala:100:24]
@@ -4399,6 +4397,7 @@ module TestHarness(
     .externalPins_gpio_in    (16'h0),	// @[src/main/scala/ysyxSoC/TestHarness.scala:13:20]
     .externalPins_ps2_clk    (1'h0),	// @[src/main/scala/ysyxSoC/TestHarness.scala:13:20]
     .externalPins_ps2_data   (1'h0),	// @[src/main/scala/ysyxSoC/TestHarness.scala:13:20]
+    .externalPins_uart_rx    (1'h0),	// @[src/main/scala/ysyxSoC/TestHarness.scala:13:20]
     .externalPins_gpio_out   (/* unused */),
     .externalPins_gpio_seg_0 (/* unused */),
     .externalPins_gpio_seg_1 (/* unused */),
@@ -4413,7 +4412,8 @@ module TestHarness(
     .externalPins_vga_b      (/* unused */),
     .externalPins_vga_hsync  (/* unused */),
     .externalPins_vga_vsync  (/* unused */),
-    .externalPins_vga_valid  (/* unused */)
+    .externalPins_vga_valid  (/* unused */),
+    .externalPins_uart_tx    (/* unused */)
   );
 endmodule
 
