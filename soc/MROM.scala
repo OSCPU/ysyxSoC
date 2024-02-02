@@ -57,7 +57,7 @@ class AXI4MROM(address: Seq[AddressSet])(implicit p: Parameters) extends LazyMod
 
     mrom.io.raddr := in.ar.bits.addr
     mrom.io.ren := in.ar.fire
-    in.ar.ready := true.B
+    in.ar.ready := (state === stateIdle)
     assert(!(in.ar.fire && in.ar.bits.size === 3.U), "do not support 8 byte transfter")
 
     in.r.bits.data := RegEnable(Fill(2, mrom.io.rdata), in.ar.fire)
