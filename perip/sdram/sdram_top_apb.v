@@ -30,22 +30,21 @@ module sdram_top_apb (
 
   typedef enum [1:0] { ST_IDLE, ST_WAIT_ACCEPT, ST_WAIT_ACK } state_t;
   reg [1:0] state;
-  wire req_accept, req_ack;
+  wire req_accept;
 
   always @(posedge clock) begin
     if (reset) state <= ST_IDLE;
     else
       case (state)
-        ST_IDLE: state <= (in_psel ? (req_accept ? ST_WAIT_ACK : ST_WAIT_ACCEPT) : ST_IDLE);
-        ST_WAIT_ACCEPT: if (req_accept) state <= ST_WAIT_ACK;
-        ST_WAIT_ACK: if (req_ack) state <= ST_IDLE;
+        ST_IDLE: state <= (is_read || is_write ? (req_accept ? ST_WAIT_ACK : ST_WAIT_ACCEPT) : ST_IDLE);
+        ST_WAIT_ACCEPT: state <= req_accept ? ST_WAIT_ACK : ST_WAIT_ACCEPT;
+        ST_WAIT_ACK: if (in_pready) state <= ST_IDLE;
         default: state <= state;
       endcase
   end
 
-  wire has_req = (in_psel && (state === ST_IDLE)) || (state == ST_WAIT_ACCEPT);
-  wire is_read  = has_req && !in_pwrite;
-  wire is_write = has_req &&  in_pwrite;
+  wire is_read  = ((in_psel && !in_penable) || (state == ST_WAIT_ACCEPT)) && !in_pwrite;
+  wire is_write = ((in_psel && !in_penable) || (state == ST_WAIT_ACCEPT)) &&  in_pwrite;
   sdram_axi_core #(
     .SDRAM_MHZ(100),
     .SDRAM_ADDR_W(24),
@@ -60,7 +59,7 @@ module sdram_top_apb (
     .inport_addr_i(in_paddr),
     .inport_write_data_i(in_pwdata),
     .inport_accept_o(req_accept),
-    .inport_ack_o(req_ack),
+    .inport_ack_o(in_pready),
     .inport_error_o(in_pslverr),
     .inport_read_data_o(in_prdata),
 
@@ -77,5 +76,5 @@ module sdram_top_apb (
     .sdram_data_output_o(sdram_dout),
     .sdram_data_out_en_o(sdram_dout_en)
   );
-  assign in_pready = (is_write ? req_accept : req_ack);
+
 endmodule
