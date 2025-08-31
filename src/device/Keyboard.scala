@@ -28,24 +28,11 @@ class ps2Chisel extends Module {
   val io = IO(new PS2CtrlIO)
 }
 
-class APBKeyboard(address: Seq[AddressSet])(implicit p: Parameters) extends LazyModule {
-  val node = APBSlaveNode(Seq(APBSlavePortParameters(
-    Seq(APBSlaveParameters(
-      address       = address,
-      executable    = true,
-      supportsRead  = true,
-      supportsWrite = true)),
-    beatBytes  = 4)))
-
-  lazy val module = new Impl
-  class Impl extends LazyModuleImp(this) {
-    val (in, _) = node.in(0)
-    val ps2_bundle = IO(new PS2IO)
-
-    val mps2 = Module(new ps2_top_apb)
-    mps2.io.clock := clock
-    mps2.io.reset := reset
-    mps2.io.in <> in
-    ps2_bundle <> mps2.io.ps2
-  }
-}
+class APBKeyboard(address: Seq[AddressSet])(implicit p: Parameters)
+  extends APB4DevTemplate(address, new PS2IO)((in: APBBundle, outer: LazyModuleImp, extra) => {
+  val mps2 = Module(new ps2_top_apb)
+  mps2.io.clock := outer.clock
+  mps2.io.reset := outer.reset
+  mps2.io.in <> in
+  extra <> mps2.io.ps2
+})

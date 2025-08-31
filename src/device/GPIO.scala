@@ -29,24 +29,11 @@ class gpioChisel extends Module {
   val io = IO(new GPIOCtrlIO)
 }
 
-class APBGPIO(address: Seq[AddressSet])(implicit p: Parameters) extends LazyModule {
-  val node = APBSlaveNode(Seq(APBSlavePortParameters(
-    Seq(APBSlaveParameters(
-      address       = address,
-      executable    = true,
-      supportsRead  = true,
-      supportsWrite = true)),
-    beatBytes  = 4)))
-
-  lazy val module = new Impl
-  class Impl extends LazyModuleImp(this) {
-    val (in, _) = node.in(0)
-    val gpio_bundle = IO(new GPIOIO)
-
-    val mgpio = Module(new gpio_top_apb)
-    mgpio.io.clock := clock
-    mgpio.io.reset := reset
-    mgpio.io.in <> in
-    gpio_bundle <> mgpio.io.gpio
-  }
-}
+class APBGPIO(address: Seq[AddressSet])(implicit p: Parameters)
+  extends APB4DevTemplate(address, new GPIOIO)((in: APBBundle, outer: LazyModuleImp, extra) => {
+  val mgpio = Module(new gpio_top_apb)
+  mgpio.io.clock := outer.clock
+  mgpio.io.reset := outer.reset
+  mgpio.io.in <> in
+  extra <> mgpio.io.gpio
+})

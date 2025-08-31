@@ -22,24 +22,11 @@ class uart_top_apb extends BlackBox {
   })
 }
 
-class APBUart16550(address: Seq[AddressSet])(implicit p: Parameters) extends LazyModule {
-  val node = APBSlaveNode(Seq(APBSlavePortParameters(
-    Seq(APBSlaveParameters(
-      address       = address,
-      executable    = false,
-      supportsRead  = true,
-      supportsWrite = true)),
-    beatBytes  = 4)))
-
-  lazy val module = new Impl
-  class Impl extends LazyModuleImp(this) {
-    val (in, _) = node.in(0)
-    val uart = IO(new UARTIO)
-
-    val muart = Module(new uart_top_apb)
-    muart.io.clock := clock
-    muart.io.reset := reset
-    muart.io.in <> in
-    uart <> muart.io.uart
-  }
-}
+class APBUart16550(address: Seq[AddressSet])(implicit p: Parameters)
+  extends APB4DevTemplate(address, new UARTIO)((in: APBBundle, outer: LazyModuleImp, extra) => {
+  val muart = Module(new uart_top_apb)
+  muart.io.clock := outer.clock
+  muart.io.reset := outer.reset
+  muart.io.in <> in
+  extra <> muart.io.uart
+})

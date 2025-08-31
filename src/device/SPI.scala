@@ -29,24 +29,11 @@ class flash extends BlackBox {
   val io = IO(Flipped(new SPIIO(1)))
 }
 
-class APBSPI(address: Seq[AddressSet])(implicit p: Parameters) extends LazyModule {
-  val node = APBSlaveNode(Seq(APBSlavePortParameters(
-    Seq(APBSlaveParameters(
-      address       = address,
-      executable    = true,
-      supportsRead  = true,
-      supportsWrite = true)),
-    beatBytes  = 4)))
-
-  lazy val module = new Impl
-  class Impl extends LazyModuleImp(this) {
-    val (in, _) = node.in(0)
-    val spi_bundle = IO(new SPIIO)
-
-    val mspi = Module(new spi_top_apb)
-    mspi.io.clock := clock
-    mspi.io.reset := reset
-    mspi.io.in <> in
-    spi_bundle <> mspi.io.spi
-  }
-}
+class APBSPI(address: Seq[AddressSet])(implicit p: Parameters)
+  extends APB4DevTemplate(address, new SPIIO)((in: APBBundle, outer: LazyModuleImp, extra) => {
+  val mspi = Module(new spi_top_apb)
+  mspi.io.clock := outer.clock
+  mspi.io.reset := outer.reset
+  mspi.io.in <> in
+  extra <> mspi.io.spi
+})
