@@ -25,27 +25,36 @@ object AXI4SlaveNodeGenerator {
 
 class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
   val xbar = AXI4Xbar()
-  val xbar2 = AXI4Xbar()
   val apbxbar = LazyModule(new APBFanout).node
   val cpu = LazyModule(new CPU(idBits = Config.idBits))
 
-  val luart = LazyModule(new APBUart16550(AddressSet.misaligned(0x10000000, 0x1000)))
-  //val lgpio = LazyModule(new APBGPIO(AddressSet.misaligned(0x10002000, 0x10)))
-  //val lkeyboard = LazyModule(new APBKeyboard(AddressSet.misaligned(0x10011000, 0x8)))
-  //val lvga = LazyModule(new APBVGA(AddressSet.misaligned(0x21000000, 0x200000)))
-  val lspi  = LazyModule(new APBSPI(
-    AddressSet.misaligned(0x10001000, 0x1000) ++    // SPI controller
-    AddressSet.misaligned(0x30000000, 0x10000000)   // XIP flash
-  ))
-  val lpsram = LazyModule(new APBPSRAM(AddressSet.misaligned(0x80000000L, 0x400000)))
-  //val lmrom = LazyModule(new AXI4MROM(AddressSet.misaligned(0x20000000, 0x1000)))
-  //val sramNode = AXI4RAM(AddressSet.misaligned(0x0f000000, 0x2000).head, false, true, 4, None, Nil, false)
+  def AddrSpace(base: BigInt, len: BigInt = 0x1000) = AddressSet.misaligned(base, len)
 
-  //List(lspi.node, luart.node, lpsram.node, lgpio.node, lkeyboard.node, lvga.node).map(_ := apbxbar)
-  //List(apbxbar := APBDelayer() := AXI4ToAPB() := AXI4Buffer(), lmrom.node, sramNode).map(_ := xbar2)
-  List(lspi.node, luart.node, lpsram.node).map(_ := apbxbar)
-  List(apbxbar := APBDelayer() := AXI4ToAPB() := AXI4Buffer()).map(_ := xbar2)
-  xbar2 := AXI4UserYanker(Some(1)) := AXI4Fragmenter() := xbar
+  val luart0    = LazyModule(new APBUart16550(AddrSpace(0x10000000, 0x8)))
+  val lspi      = LazyModule(new APBSPI      (AddrSpace(0x10001000, 0x20)   ++     // SPI controller
+                                              AddrSpace(0x30000000, 0x10000000)))  // XIP flash
+  val larchinfo = LazyModule(new APB4ArchInfo(AddrSpace(0x10006000, 0x10)))
+
+//val lgpio     = LazyModule(new APBGPIO     (AddrSpace(0x10002000, 0x10)))
+//val lkeyboard = LazyModule(new APBKeyboard (AddrSpace(0x10011000, 0x8)))
+//val lvga      = LazyModule(new APBVGA      (AddrSpace(0x21000000, 0x200000)))
+  val lpsram    = LazyModule(new APBPSRAM    (AddrSpace(0x80000000L, 0x400000)))
+
+  List(lspi.node, luart0.node,
+       larchinfo.node,
+       lpsram.node
+  ).map(_ := apbxbar)
+  if (false) {
+    val xbar2 = AXI4Xbar()
+    apbxbar := APBDelayer() := AXI4ToAPB() := AXI4Buffer() := xbar2
+    val lmrom = LazyModule(new AXI4MROM(AddrSpace(0x20000000, 0x1000)))
+    val sramNode = AXI4RAM(AddrSpace(0x02020000, 0x2000).head, false, true, 4, None, Nil, false)
+    List(lmrom.node, sramNode).map(_ := xbar2)
+    xbar2 := AXI4UserYanker(Some(1)) := AXI4Fragmenter() := xbar
+  } else {
+    apbxbar := APBDelayer() := AXI4ToAPB() := AXI4UserYanker(Some(1)) := AXI4Fragmenter() := xbar
+  }
+
   xbar := cpu.masterNode
 
   override lazy val module = new Impl
@@ -58,12 +67,12 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
 
     // expose slave I/O interface as ports
     val spi = IO(chiselTypeOf(lspi.module.spi_bundle))
-    val uart = IO(chiselTypeOf(luart.module.uart))
+    val uart = IO(chiselTypeOf(luart0.module.uart))
     val psram = IO(chiselTypeOf(lpsram.module.qspi_bundle))
     //val gpio = IO(chiselTypeOf(lgpio.module.gpio_bundle))
     //val ps2 = IO(chiselTypeOf(lkeyboard.module.ps2_bundle))
     //val vga = IO(chiselTypeOf(lvga.module.vga_bundle))
-    uart <> luart.module.uart
+    uart <> luart0.module.uart
     spi <> lspi.module.spi_bundle
     psram <> lpsram.module.qspi_bundle
     //gpio <> lgpio.module.gpio_bundle
