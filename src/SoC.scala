@@ -30,6 +30,10 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
 
   def AddrSpace(base: BigInt, len: BigInt = 0x1000) = AddressSet.misaligned(base, len)
 
+  // RISC-V system
+  val lclint    = LazyModule(new APB4CLINT   (AddrSpace(0x02010000, 0x10000)))
+
+  // generic system
   val luart0    = LazyModule(new APBUart16550(AddrSpace(0x10000000, 0x8)))
   val lspi      = LazyModule(new APBSPI      (AddrSpace(0x10001000, 0x20)   ++     // SPI controller
                                               AddrSpace(0x30000000, 0x10000000)))  // XIP flash
@@ -40,7 +44,8 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
 //val lvga      = LazyModule(new APBVGA      (AddrSpace(0x21000000, 0x200000)))
   val lpsram    = LazyModule(new APBPSRAM    (AddrSpace(0x80000000L, 0x400000)))
 
-  List(lspi, luart0,
+  List(lclint,
+       lspi, luart0,
        larchinfo,
        lpsram
   ).map(_.node := apbxbar)
@@ -60,6 +65,9 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
   override lazy val module = new Impl
   class Impl extends LazyModuleImp(this) with DontTouch {
     cpu.module.slave := DontCare
+
+    // external slower clock
+    val clock_half = IO(Input(Bool()))
 
     // connect interrupt signal to cpu
     val intr = IO(Input(Bool()))
@@ -93,6 +101,11 @@ class ysyxSoCFull(implicit p: Parameters) extends LazyModule {
   override lazy val module = new Impl
   class Impl extends LazyModuleImp(this) with DontTouch {
     val masic = asic.module
+
+    // slower clock
+    val divReg = RegInit(false.B)
+    divReg := !divReg
+    masic.clock_half := divReg
 
     masic.intr := false.B
 
