@@ -23,6 +23,30 @@ class APB4CLINT(address: Seq[AddressSet])(implicit p: Parameters) extends APB4De
 class apb4_crc extends BlackBoxWithAPB4
 class APB4CRC(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_crc)
 
+class GPIOBundle extends Bundle {
+  val gpio_in_i = Input(UInt(32.W))
+  val gpio_out_o = Output(UInt(32.W))
+  val gpio_dir_o = Output(UInt(32.W))
+  val gpio_alt_in_o = Output(UInt(32.W))
+  val gpio_alt_0_out_i = Input(UInt(32.W))
+  val gpio_alt_0_dir_i = Input(UInt(32.W))
+  val gpio_alt_1_out_i = Input(UInt(32.W))
+  val gpio_alt_1_dir_i = Input(UInt(32.W))
+  val irq_o = Output(Bool())
+}
+class GPIOnewIO extends MyAPB4Bundle {
+  val gpio = new GPIOBundle
+  override def connect_extra(extra: Data): Unit = extra.asInstanceOf[GPIOBundle] <> this.gpio
+}
+class apb4_gpio extends BlackBoxWithAPB4(new GPIOnewIO)
+class APB4GPIO(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_gpio, new GPIOBundle)
+
+class gpio_led_model extends BlackBox {
+  val io = IO(new Bundle {
+    val led_i = Input(UInt(32.W))
+  })
+}
+
 class TimerBundle extends Bundle {
   val exclk_i = Input(Bool())
   val capch_i = Input(Bool())
