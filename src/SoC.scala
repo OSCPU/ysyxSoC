@@ -39,6 +39,12 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
                                               AddrSpace(0x30000000, 0x10000000)))  // XIP flash
   val larchinfo = LazyModule(new APB4ArchInfo(AddrSpace(0x10006000, 0x10)))
 
+  // interface
+  val ltim0     = LazyModule(new APB4Timer   (AddrSpace(0x10108000, 0x20)))
+  val ltim1     = LazyModule(new APB4Timer   (AddrSpace(0x10109000, 0x20)))
+  val ltim2     = LazyModule(new APB4Timer   (AddrSpace(0x1010a000, 0x20)))
+  val ltim3     = LazyModule(new APB4Timer   (AddrSpace(0x1010b000, 0x20)))
+
   // application
   val lcrc      = LazyModule(new APB4CRC     (AddrSpace(0x10301000, 0x20)))
 
@@ -50,6 +56,7 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
   List(lclint,
        lspi, luart0,
        larchinfo,
+       ltim0, ltim1, ltim2, ltim3,
        lcrc,
        lpsram
   ).map(_.node := apbxbar)
@@ -72,6 +79,11 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
 
     // external slower clock
     val clock_half = IO(Input(Bool()))
+
+    List(ltim0, ltim1, ltim2, ltim3).map { t =>
+      t.module.extra.capch_i := false.B
+      t.module.extra.exclk_i := clock_half
+    }
 
     // connect interrupt signal to cpu
     val intr = IO(Input(Bool()))
