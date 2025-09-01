@@ -19,3 +19,6 @@ class CLINTIO extends MyAPB4Bundle {
 }
 class apb4_clint extends BlackBoxWithAPB4(new CLINTIO)
 class APB4CLINT(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_clint, new CLINTBundle)
+
+class apb4_crc extends BlackBoxWithAPB4
+class APB4CRC(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_crc)

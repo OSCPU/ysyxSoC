@@ -39,6 +39,9 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
                                               AddrSpace(0x30000000, 0x10000000)))  // XIP flash
   val larchinfo = LazyModule(new APB4ArchInfo(AddrSpace(0x10006000, 0x10)))
 
+  // application
+  val lcrc      = LazyModule(new APB4CRC     (AddrSpace(0x10301000, 0x20)))
+
 //val lgpio     = LazyModule(new APBGPIO     (AddrSpace(0x10002000, 0x10)))
 //val lkeyboard = LazyModule(new APBKeyboard (AddrSpace(0x10011000, 0x8)))
 //val lvga      = LazyModule(new APBVGA      (AddrSpace(0x21000000, 0x200000)))
@@ -47,6 +50,7 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
   List(lclint,
        lspi, luart0,
        larchinfo,
+       lcrc,
        lpsram
   ).map(_.node := apbxbar)
   if (false) {
