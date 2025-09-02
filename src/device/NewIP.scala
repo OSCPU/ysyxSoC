@@ -97,6 +97,19 @@ class PLICIO extends MyAPB4Bundle {
 class apb4_plic extends BlackBoxWithAPB4(new PLICIO)
 class APB4PLIC(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_plic, new PLICBundle, true)
 
+class PS2Bundle extends Bundle {
+  val ps2_clk_i = Input(Bool())
+  val ps2_dat_i = Input(Bool())
+}
+class PS2newIO extends MyAPB4Bundle {
+  val ps2 = new PS2Bundle
+  val ps2_irq_o = Output(Bool())
+  override def connect_extra(extra: Data): Unit = extra.asInstanceOf[PS2Bundle] <> this.ps2
+  override def connect_irq(irq_o: Bool): Unit = irq_o := ps2_irq_o
+}
+class apb4_ps2 extends BlackBoxWithAPB4(new PS2newIO)
+class APB4PS2(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_ps2, new PS2Bundle, true)
+
 class TimerBundle extends Bundle {
   val exclk_i = Input(Bool())
   val capch_i = Input(Bool())
