@@ -82,6 +82,17 @@ class I2SIO extends MyAPB4Bundle {
 class apb4_i2s extends BlackBoxWithAPB4(new I2SIO)
 class APB4I2S(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_i2s, new I2SBundle)
 
+class PLICBundle extends Bundle {
+  val irq_i = Input(UInt(32.W))
+  val irq_o = Output(Bool())
+}
+class PLICIO extends MyAPB4Bundle {
+  val plic = new PLICBundle
+  override def connect_extra(extra: Data): Unit = extra.asInstanceOf[PLICBundle] <> this.plic
+}
+class apb4_plic extends BlackBoxWithAPB4(new PLICIO)
+class APB4PLIC(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_plic, new PLICBundle)
+
 class TimerBundle extends Bundle {
   val exclk_i = Input(Bool())
   val capch_i = Input(Bool())
