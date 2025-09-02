@@ -47,6 +47,22 @@ class gpio_led_model extends BlackBox {
   })
 }
 
+class I2CBundle extends Bundle {
+  val scl_i = Input(Bool())
+  val scl_o = Output(Bool())
+  val scl_dir_o = Output(Bool())
+  val sda_i = Input(Bool())
+  val sda_o = Output(Bool())
+  val sda_dir_o = Output(Bool())
+  val irq_o = Output(Bool())
+}
+class I2CIO extends MyAPB4Bundle {
+  val i2c = new I2CBundle
+  override def connect_extra(extra: Data): Unit = extra.asInstanceOf[I2CBundle] <> this.i2c
+}
+class apb4_i2c extends BlackBoxWithAPB4(new I2CIO)
+class APB4I2C(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_i2c, new I2CBundle)
+
 class TimerBundle extends Bundle {
   val exclk_i = Input(Bool())
   val capch_i = Input(Bool())

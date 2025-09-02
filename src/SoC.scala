@@ -2,6 +2,7 @@ package ysyx
 
 import chisel3._
 import chisel3.util._
+import chisel3.experimental.Analog
 
 import freechips.rocketchip.diplomacy._
 import org.chipsalliance.cde.config.Parameters
@@ -43,6 +44,7 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
   val lgpio0    = LazyModule(new APB4GPIO    (AddrSpace(0x10100000, 0x40)))
   val lgpio1    = LazyModule(new APB4GPIO    (AddrSpace(0x10101000, 0x40)))
   val lgpio2    = LazyModule(new APB4GPIO    (AddrSpace(0x10102000, 0x40)))
+  val li2c      = LazyModule(new APB4I2C     (AddrSpace(0x10104000, 0x20)))
   val ltim0     = LazyModule(new APB4Timer   (AddrSpace(0x10108000, 0x20)))
   val ltim1     = LazyModule(new APB4Timer   (AddrSpace(0x10109000, 0x20)))
   val ltim2     = LazyModule(new APB4Timer   (AddrSpace(0x1010a000, 0x20)))
@@ -59,7 +61,7 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
   List(lclint,
        lspi, luart0,
        larchinfo,
-       lgpio0, lgpio1, lgpio2, ltim0, ltim1, ltim2, ltim3,
+       lgpio0, lgpio1, lgpio2, li2c, ltim0, ltim1, ltim2, ltim3,
        lcrc,
        lpsram
   ).map(_.node := apbxbar)
@@ -94,6 +96,12 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
       t.module.extra.gpio_alt_1_out_i := 0.U
       t.module.extra.gpio_alt_1_dir_i := 0.U
     }
+
+    val i2c_io = li2c.module.extra
+    val i2c_scl = IO(Analog(1.W))
+    val i2c_sda = IO(Analog(1.W))
+    i2c_io.scl_i := TriStateInBuf(i2c_scl, i2c_io.scl_o, i2c_io.scl_dir_o)
+    i2c_io.sda_i := TriStateInBuf(i2c_sda, i2c_io.sda_o, i2c_io.sda_dir_o)
 
     // connect interrupt signal to cpu
     val intr = IO(Input(Bool()))
