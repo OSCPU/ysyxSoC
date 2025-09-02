@@ -63,6 +63,25 @@ class I2CIO extends MyAPB4Bundle {
 class apb4_i2c extends BlackBoxWithAPB4(new I2CIO)
 class APB4I2C(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_i2c, new I2CBundle)
 
+class I2SBundle extends Bundle {
+  val mclk_o = Output(Bool())
+  val sck_o = Output(Bool())
+  val sck_i = Input(Bool())
+  val sck_en_o = Output(Bool())
+  val ws_o = Output(Bool())
+  val ws_i = Input(Bool())
+  val ws_en_o = Output(Bool())
+  val sd_o = Output(Bool())
+  val sd_i = Input(Bool())
+  val irq_o = Output(Bool())
+}
+class I2SIO extends MyAPB4Bundle {
+  val i2s = new I2SBundle
+  override def connect_extra(extra: Data): Unit = extra.asInstanceOf[I2SBundle] <> this.i2s
+}
+class apb4_i2s extends BlackBoxWithAPB4(new I2SIO)
+class APB4I2S(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_i2s, new I2SBundle)
+
 class TimerBundle extends Bundle {
   val exclk_i = Input(Bool())
   val capch_i = Input(Bool())

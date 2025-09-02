@@ -50,6 +50,9 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
   val ltim2     = LazyModule(new APB4Timer   (AddrSpace(0x1010a000, 0x20)))
   val ltim3     = LazyModule(new APB4Timer   (AddrSpace(0x1010b000, 0x20)))
 
+  // multimedia
+  val li2s      = LazyModule(new APB4I2S     (AddrSpace(0x10201000, 0x20)))
+
   // application
   val lcrc      = LazyModule(new APB4CRC     (AddrSpace(0x10301000, 0x20)))
 
@@ -62,6 +65,7 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
        lspi, luart0,
        larchinfo,
        lgpio0, lgpio1, lgpio2, li2c, ltim0, ltim1, ltim2, ltim3,
+       li2s,
        lcrc,
        lpsram
   ).map(_.node := apbxbar)
@@ -102,6 +106,13 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
     val i2c_sda = IO(Analog(1.W))
     i2c_io.scl_i := TriStateInBuf(i2c_scl, i2c_io.scl_o, i2c_io.scl_dir_o)
     i2c_io.sda_i := TriStateInBuf(i2c_sda, i2c_io.sda_o, i2c_io.sda_dir_o)
+
+    val i2s_io = li2s.module.extra
+    val i2s_sck = IO(Analog(1.W))
+    val i2s_ws  = IO(Analog(1.W))
+    i2s_io.sck_i := TriStateInBuf(i2s_sck, i2s_io.sck_o, i2s_io.sck_en_o)
+    i2s_io.ws_i  := TriStateInBuf(i2s_ws, i2s_io.ws_o, i2s_io.ws_en_o)
+    i2s_io.sd_i := false.B
 
     // connect interrupt signal to cpu
     val intr = IO(Input(Bool()))
