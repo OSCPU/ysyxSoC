@@ -122,6 +122,9 @@ class PWMIO extends MyAPB4Bundle {
 class apb4_pwm extends BlackBoxWithAPB4(new PWMIO)
 class APB4PWM(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_pwm, new PWMBundle, true)
 
+class apb4_rng extends BlackBoxWithAPB4
+class APB4RNG(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_rng)
+
 class TimerBundle extends Bundle {
   val exclk_i = Input(Bool())
   val capch_i = Input(Bool())

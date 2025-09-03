@@ -58,6 +58,7 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
   val li2s      = LazyModule(new APB4I2S     (AddrSpace(0x10201000, 0x20)))
 
   // application
+  val lrng      = LazyModule(new APB4RNG     (AddrSpace(0x10300000, 0x10)))
   val lcrc      = LazyModule(new APB4CRC     (AddrSpace(0x10301000, 0x20)))
 
 //val lgpio     = LazyModule(new APBGPIO     (AddrSpace(0x10002000, 0x10)))
@@ -70,7 +71,7 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
        larchinfo,
        lgpio0, lgpio1, lgpio2, li2c, lps2, lpwm0, lpwm1, ltim0, ltim1, ltim2, ltim3,
        li2s,
-       lcrc,
+       lrng, lcrc,
        lpsram
   ).map(_.node := apbxbar)
   if (false) {
