@@ -125,6 +125,19 @@ class APB4PWM(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevB
 class apb4_rng extends BlackBoxWithAPB4
 class APB4RNG(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_rng)
 
+class RTCBundle extends Bundle {
+  val rtc_clk_i = Input(Bool())
+  val rtc_rst_n_i = Input(Bool())
+}
+class RTCIO extends MyAPB4Bundle {
+  val rtc = new RTCBundle
+  val rtc_irq_o = Output(Bool())
+  override def connect_extra(extra: Data): Unit = extra.asInstanceOf[RTCBundle] <> this.rtc
+  override def connect_irq(irq_o: Bool): Unit = irq_o := rtc_irq_o
+}
+class apb4_rtc extends BlackBoxWithAPB4(new RTCIO)
+class APB4RTC(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_rtc, new RTCBundle, true)
+
 class TimerBundle extends Bundle {
   val exclk_i = Input(Bool())
   val capch_i = Input(Bool())

@@ -39,6 +39,7 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
   val luart0    = LazyModule(new APBUart16550(AddrSpace(0x10000000, 0x8)))
   val lspi      = LazyModule(new APBSPI      (AddrSpace(0x10001000, 0x20)   ++     // SPI controller
                                               AddrSpace(0x30000000, 0x10000000)))  // XIP flash
+  val lrtc      = LazyModule(new APB4RTC     (AddrSpace(0x10004000, 0x20)))
   val larchinfo = LazyModule(new APB4ArchInfo(AddrSpace(0x10006000, 0x10)))
 
   // interface
@@ -68,7 +69,7 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
 
   List(lclint, lplic,
        lspi, luart0,
-       larchinfo,
+       lrtc, larchinfo,
        lgpio0, lgpio1, lgpio2, li2c, lps2, lpwm0, lpwm1, ltim0, ltim1, ltim2, ltim3,
        li2s,
        lrng, lcrc,
@@ -105,6 +106,8 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
       t.module.extra.gpio_alt_1_out_i := 0.U
       t.module.extra.gpio_alt_1_dir_i := 0.U
     }
+    lrtc.module.extra.rtc_clk_i := clock_half
+    lrtc.module.extra.rtc_rst_n_i := !reset.asBool
 
     val i2c_io = li2c.module.extra
     val i2c_scl = IO(Analog(1.W))
@@ -122,8 +125,8 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
     // connect interrupt signal
     val intr = IO(Input(Bool()))
     cpu.module.interrupt := lplic.module.irq_o
-    lplic.module.extra.irq_i := Cat(List(lgpio0, lgpio1, lgpio2, li2c, li2s,
-      ltim0, ltim1, ltim2, ltim3, lps2).map(_.module.irq_o)) ## intr
+    lplic.module.extra.irq_i := Cat(List(lgpio0, lgpio1, lgpio2, lrtc, li2c, li2s,
+      lpwm0, lpwm1, ltim0, ltim1, ltim2, ltim3, lps2).map(_.module.irq_o)) ## intr
 
     // expose slave I/O interface as ports
     def genIO[T <: Data](name: String, inner: T) = {
