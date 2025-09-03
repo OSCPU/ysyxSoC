@@ -56,6 +56,7 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
   val ltim3     = LazyModule(new APB4Timer   (AddrSpace(0x1010b000, 0x20)))
 
   // multimedia
+  val lqspi     = LazyModule(new APB4QSPI    (AddrSpace(0x10200000, 0x20)))
   val li2s      = LazyModule(new APB4I2S     (AddrSpace(0x10201000, 0x20)))
 
   // application
@@ -71,7 +72,7 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
        lspi, luart0,
        lrtc, larchinfo,
        lgpio0, lgpio1, lgpio2, li2c, lps2, lpwm0, lpwm1, ltim0, ltim1, ltim2, ltim3,
-       li2s,
+       lqspi, li2s,
        lrng, lcrc,
        lpsram
   ).map(_.node := apbxbar)
@@ -122,10 +123,18 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
     i2s_io.ws_i  := TriStateInBuf(i2s_ws, i2s_io.ws_o, i2s_io.ws_en_o)
     i2s_io.sd_i := false.B
 
+    val qspi_io = lqspi.module.extra
+    val qspi_sck_o = IO(Output(Bool()))
+    val qspi_nss_o = IO(Output(UInt(4.W)))
+    val qspi_dio  = IO(Vec(4, Analog(1.W)))
+    qspi_sck_o := qspi_io.spi_sck_o
+    qspi_nss_o := qspi_io.spi_nss_o
+    qspi_io.spi_io_in_i := Cat((0 to 3).map(i => TriStateInBuf(qspi_dio(i), qspi_io.spi_io_out_o(i), qspi_io.spi_io_en_o(i))).reverse)
+
     // connect interrupt signal
     val intr = IO(Input(Bool()))
     cpu.module.interrupt := lplic.module.irq_o
-    lplic.module.extra.irq_i := Cat(List(lgpio0, lgpio1, lgpio2, lrtc, li2c, li2s,
+    lplic.module.extra.irq_i := Cat(List(lgpio0, lgpio1, lgpio2, lrtc, li2c, lqspi, li2s,
       lpwm0, lpwm1, ltim0, ltim1, ltim2, ltim3, lps2).map(_.module.irq_o)) ## intr
 
     // expose slave I/O interface as ports
