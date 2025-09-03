@@ -110,6 +110,18 @@ class PS2newIO extends MyAPB4Bundle {
 class apb4_ps2 extends BlackBoxWithAPB4(new PS2newIO)
 class APB4PS2(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_ps2, new PS2Bundle, true)
 
+class PWMBundle extends Bundle {
+  val pwm_o = Output(UInt(4.W))
+}
+class PWMIO extends MyAPB4Bundle {
+  val pwm = new PWMBundle
+  val pwm_irq_o = Output(Bool())
+  override def connect_extra(extra: Data): Unit = extra.asInstanceOf[PWMBundle] <> this.pwm
+  override def connect_irq(irq_o: Bool): Unit = irq_o := pwm_irq_o
+}
+class apb4_pwm extends BlackBoxWithAPB4(new PWMIO)
+class APB4PWM(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_pwm, new PWMBundle, true)
+
 class TimerBundle extends Bundle {
   val exclk_i = Input(Bool())
   val capch_i = Input(Bool())

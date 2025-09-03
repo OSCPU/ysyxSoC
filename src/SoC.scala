@@ -47,6 +47,8 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
   val lgpio2    = LazyModule(new APB4GPIO    (AddrSpace(0x10102000, 0x40)))
   val li2c      = LazyModule(new APB4I2C     (AddrSpace(0x10104000, 0x20)))
   val lps2      = LazyModule(new APB4PS2     (AddrSpace(0x10105000, 0x10)))
+  val lpwm0     = LazyModule(new APB4PWM     (AddrSpace(0x10106000, 0x40)))
+  val lpwm1     = LazyModule(new APB4PWM     (AddrSpace(0x10107000, 0x40)))
   val ltim0     = LazyModule(new APB4Timer   (AddrSpace(0x10108000, 0x20)))
   val ltim1     = LazyModule(new APB4Timer   (AddrSpace(0x10109000, 0x20)))
   val ltim2     = LazyModule(new APB4Timer   (AddrSpace(0x1010a000, 0x20)))
@@ -66,7 +68,7 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
   List(lclint, lplic,
        lspi, luart0,
        larchinfo,
-       lgpio0, lgpio1, lgpio2, li2c, lps2, ltim0, ltim1, ltim2, ltim3,
+       lgpio0, lgpio1, lgpio2, li2c, lps2, lpwm0, lpwm1, ltim0, ltim1, ltim2, ltim3,
        li2s,
        lcrc,
        lpsram
