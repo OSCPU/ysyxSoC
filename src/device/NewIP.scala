@@ -179,3 +179,14 @@ class UARTnewIO extends MyAPB4Bundle {
 }
 class apb4_uart extends BlackBoxWithAPB4(new UARTnewIO)
 class APB4UART(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_uart, new UARTBundle, true)
+
+class WDGBundle extends Bundle {
+  val rtc_clk_i = Input(Bool())
+  val rst_o = Output(Bool())
+}
+class WDGIO extends MyAPB4Bundle {
+  val wdg = new WDGBundle
+  override def connect_extra(extra: Data): Unit = extra.asInstanceOf[WDGBundle] <> this.wdg
+}
+class apb4_wdg extends BlackBoxWithAPB4(new WDGIO)
+class APB4WDG(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_wdg, new WDGBundle)

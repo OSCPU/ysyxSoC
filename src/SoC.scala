@@ -40,6 +40,7 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
   val lspi      = LazyModule(new APBSPI      (AddrSpace(0x10001000, 0x20)   ++     // SPI controller
                                               AddrSpace(0x30000000, 0x10000000)))  // XIP flash
   val lrtc      = LazyModule(new APB4RTC     (AddrSpace(0x10004000, 0x20)))
+  val lwdg      = LazyModule(new APB4WDG     (AddrSpace(0x10005000, 0x20)))
   val larchinfo = LazyModule(new APB4ArchInfo(AddrSpace(0x10006000, 0x10)))
 
   // interface
@@ -71,7 +72,7 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
 
   List(lclint, lplic,
        lspi, luart0,
-       lrtc, larchinfo,
+       lrtc, lwdg, larchinfo,
        lgpio0, lgpio1, lgpio2, luart1, li2c, lps2, lpwm0, lpwm1, ltim0, ltim1, ltim2, ltim3,
        lqspi, li2s,
        lrng, lcrc,
@@ -110,6 +111,7 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
     }
     lrtc.module.extra.rtc_clk_i := clock_half
     lrtc.module.extra.rtc_rst_n_i := !reset.asBool
+    lwdg.module.extra.rtc_clk_i := clock_half
 
     val i2c_io = li2c.module.extra
     val i2c_scl = IO(Analog(1.W))
