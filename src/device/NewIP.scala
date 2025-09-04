@@ -166,3 +166,16 @@ class TimerIO extends MyAPB4Bundle {
 }
 class apb4_tmr extends BlackBoxWithAPB4(new TimerIO)
 class APB4Timer(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_tmr, new TimerBundle, true)
+
+class UARTBundle extends Bundle {
+  val uart_rx_i = Input(Bool())
+  val uart_tx_o = Output(Bool())
+}
+class UARTnewIO extends MyAPB4Bundle {
+  val uart = new UARTBundle
+  val uart_irq_o = Output(Bool())
+  override def connect_extra(extra: Data): Unit = extra.asInstanceOf[UARTBundle] <> this.uart
+  override def connect_irq(irq_o: Bool): Unit = irq_o := uart_irq_o
+}
+class apb4_uart extends BlackBoxWithAPB4(new UARTnewIO)
+class APB4UART(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_uart, new UARTBundle, true)

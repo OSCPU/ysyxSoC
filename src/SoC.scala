@@ -46,6 +46,7 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
   val lgpio0    = LazyModule(new APB4GPIO    (AddrSpace(0x10100000, 0x40)))
   val lgpio1    = LazyModule(new APB4GPIO    (AddrSpace(0x10101000, 0x40)))
   val lgpio2    = LazyModule(new APB4GPIO    (AddrSpace(0x10102000, 0x40)))
+  val luart1    = LazyModule(new APB4UART    (AddrSpace(0x10103000, 0x20)))
   val li2c      = LazyModule(new APB4I2C     (AddrSpace(0x10104000, 0x20)))
   val lps2      = LazyModule(new APB4PS2     (AddrSpace(0x10105000, 0x10)))
   val lpwm0     = LazyModule(new APB4PWM     (AddrSpace(0x10106000, 0x40)))
@@ -71,7 +72,7 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
   List(lclint, lplic,
        lspi, luart0,
        lrtc, larchinfo,
-       lgpio0, lgpio1, lgpio2, li2c, lps2, lpwm0, lpwm1, ltim0, ltim1, ltim2, ltim3,
+       lgpio0, lgpio1, lgpio2, luart1, li2c, lps2, lpwm0, lpwm1, ltim0, ltim1, ltim2, ltim3,
        lqspi, li2s,
        lrng, lcrc,
        lpsram
@@ -149,7 +150,8 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
       if (false) Some(genAPB4DevIO(name, lmodule.get)) else None
     }
 
-    val uart  = genAPB4DevIO("uart", luart0)
+    val uart0 = genAPB4DevIO("uart0", luart0)
+    val uart1 = genAPB4DevIO("uart1", luart1)
     val spi   = genAPB4DevIO("spi", lspi)
     val psram = genAPB4DevIO("psram", lpsram)
     val ps2   = genAPB4DevIO("ps2", lps2)
@@ -196,11 +198,13 @@ class ysyxSoCFull(implicit p: Parameters) extends LazyModule {
       //val gpio = chiselTypeOf(masic.gpio)
       //val ps2 = chiselTypeOf(masic.ps2)
       //val vga = chiselTypeOf(masic.vga)
-      val uart = chiselTypeOf(masic.uart)
+      val uart0 = chiselTypeOf(masic.uart0)
+      val uart1 = chiselTypeOf(masic.uart1)
     })
     //externalPins.gpio <> masic.gpio
     //externalPins.ps2 <> masic.ps2
     //externalPins.vga <> masic.vga
-    externalPins.uart <> masic.uart
+    externalPins.uart0 <> masic.uart0
+    externalPins.uart1 <> masic.uart1
   }
 }
