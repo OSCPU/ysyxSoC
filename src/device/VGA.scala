@@ -33,7 +33,7 @@ class vgaChisel extends Module {
 }
 
 class APBVGA(address: Seq[AddressSet])(implicit p: Parameters)
-  extends APB4DevTemplate(address, new VGAIO)((in: APBBundle, outer: LazyModuleImp, extra) => {
+  extends APB4DevTemplate(address, new VGAIO)((in: APBBundle, outer: LazyModuleImp, irq_o: Bool, extra) => {
   val mvga = Module(new vga_top_apb)
   mvga.io.clock := outer.clock
   mvga.io.reset := outer.reset

@@ -29,7 +29,7 @@ class ps2Chisel extends Module {
 }
 
 class APBKeyboard(address: Seq[AddressSet])(implicit p: Parameters)
-  extends APB4DevTemplate(address, new PS2IO)((in: APBBundle, outer: LazyModuleImp, extra) => {
+  extends APB4DevTemplate(address, new PS2IO)((in: APBBundle, outer: LazyModuleImp, irq_o: Bool, extra) => {
   val mps2 = Module(new ps2_top_apb)
   mps2.io.clock := outer.clock
   mps2.io.reset := outer.reset

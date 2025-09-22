@@ -101,7 +101,7 @@ class PSRAMWrapper(address: BigInt) extends Module {
 }
 
 class APBPSRAM(address: Seq[AddressSet])(implicit p: Parameters)
-  extends APB4DevTemplate(address, new PSRAMQSPIBundle)((in: APBBundle, outer: LazyModuleImp, extra) => {
+  extends APB4DevTemplate(address, new PSRAMQSPIBundle)((in: APBBundle, outer: LazyModuleImp, irq_o: Bool, extra) => {
   // Check if the address set has only one element and get the base address
   require(address.length == 1, "APBPSRAM requires only one address set now")
   val mpsram = Module(new PSRAMWrapper(address.head.base))

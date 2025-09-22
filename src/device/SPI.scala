@@ -30,7 +30,7 @@ class flash extends BlackBox {
 }
 
 class APBSPI(address: Seq[AddressSet])(implicit p: Parameters)
-  extends APB4DevTemplate(address, new SPIIO)((in: APBBundle, outer: LazyModuleImp, extra) => {
+  extends APB4DevTemplate(address, new SPIIO)((in: APBBundle, outer: LazyModuleImp, irq_o: Bool, extra) => {
   val mspi = Module(new spi_top_apb)
   mspi.io.clock := outer.clock
   mspi.io.reset := outer.reset

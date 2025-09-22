@@ -117,14 +117,9 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
 
     // connect interrupt signal
     val intr = IO(Input(Bool()))
-    cpu.module.interrupt := lplic.module.extra.irq_o
-    lplic.module.extra.irq_i := Cat(
-      lgpio0.module.extra.irq_o, lgpio1.module.extra.irq_o, lgpio2.module.extra.irq_o,
-      li2c.module.extra.irq_o, li2s.module.extra.irq_o,
-      ltim0.module.extra.irq_o, ltim1.module.extra.irq_o,
-      ltim2.module.extra.irq_o, ltim3.module.extra.irq_o,
-      intr
-    )
+    cpu.module.interrupt := lplic.module.irq_o
+    lplic.module.extra.irq_i := Cat(List(lgpio0, lgpio1, lgpio2, li2c, li2s,
+      ltim0, ltim1, ltim2, ltim3).map(_.module.irq_o)) ## intr
 
     // expose slave I/O interface as ports
     def genIO[T <: Data](name: String, inner: T) = {

@@ -30,7 +30,7 @@ class gpioChisel extends Module {
 }
 
 class APBGPIO(address: Seq[AddressSet])(implicit p: Parameters)
-  extends APB4DevTemplate(address, new GPIOIO)((in: APBBundle, outer: LazyModuleImp, extra) => {
+  extends APB4DevTemplate(address, new GPIOIO)((in: APBBundle, outer: LazyModuleImp, irq_o: Bool, extra) => {
   val mgpio = Module(new gpio_top_apb)
   mgpio.io.clock := outer.clock
   mgpio.io.reset := outer.reset

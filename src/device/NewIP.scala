@@ -32,14 +32,15 @@ class GPIOBundle extends Bundle {
   val gpio_alt_0_dir_i = Input(UInt(32.W))
   val gpio_alt_1_out_i = Input(UInt(32.W))
   val gpio_alt_1_dir_i = Input(UInt(32.W))
-  val irq_o = Output(Bool())
 }
 class GPIOnewIO extends MyAPB4Bundle {
   val gpio = new GPIOBundle
+  val gpio_irq_o = Output(Bool())
   override def connect_extra(extra: Data): Unit = extra.asInstanceOf[GPIOBundle] <> this.gpio
+  override def connect_irq(irq_o: Bool): Unit = irq_o := gpio_irq_o
 }
 class apb4_gpio extends BlackBoxWithAPB4(new GPIOnewIO)
-class APB4GPIO(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_gpio, new GPIOBundle)
+class APB4GPIO(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_gpio, new GPIOBundle, true)
 
 class gpio_led_model extends BlackBox {
   val io = IO(new Bundle {
@@ -54,14 +55,15 @@ class I2CBundle extends Bundle {
   val sda_i = Input(Bool())
   val sda_o = Output(Bool())
   val sda_dir_o = Output(Bool())
-  val irq_o = Output(Bool())
 }
 class I2CIO extends MyAPB4Bundle {
   val i2c = new I2CBundle
+  val i2c_irq_o = Output(Bool())
   override def connect_extra(extra: Data): Unit = extra.asInstanceOf[I2CBundle] <> this.i2c
+  override def connect_irq(irq_o: Bool): Unit = irq_o := i2c_irq_o
 }
 class apb4_i2c extends BlackBoxWithAPB4(new I2CIO)
-class APB4I2C(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_i2c, new I2CBundle)
+class APB4I2C(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_i2c, new I2CBundle, true)
 
 class I2SBundle extends Bundle {
   val mclk_o = Output(Bool())
@@ -73,34 +75,37 @@ class I2SBundle extends Bundle {
   val ws_en_o = Output(Bool())
   val sd_o = Output(Bool())
   val sd_i = Input(Bool())
-  val irq_o = Output(Bool())
 }
 class I2SIO extends MyAPB4Bundle {
   val i2s = new I2SBundle
+  val i2s_irq_o = Output(Bool())
   override def connect_extra(extra: Data): Unit = extra.asInstanceOf[I2SBundle] <> this.i2s
+  override def connect_irq(irq_o: Bool): Unit = irq_o := i2s_irq_o
 }
 class apb4_i2s extends BlackBoxWithAPB4(new I2SIO)
-class APB4I2S(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_i2s, new I2SBundle)
+class APB4I2S(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_i2s, new I2SBundle, true)
 
 class PLICBundle extends Bundle {
   val irq_i = Input(UInt(32.W))
-  val irq_o = Output(Bool())
 }
 class PLICIO extends MyAPB4Bundle {
   val plic = new PLICBundle
+  val plic_irq_o = Output(Bool())
   override def connect_extra(extra: Data): Unit = extra.asInstanceOf[PLICBundle] <> this.plic
+  override def connect_irq(irq_o: Bool): Unit = irq_o := plic_irq_o
 }
 class apb4_plic extends BlackBoxWithAPB4(new PLICIO)
-class APB4PLIC(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_plic, new PLICBundle)
+class APB4PLIC(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_plic, new PLICBundle, true)
 
 class TimerBundle extends Bundle {
   val exclk_i = Input(Bool())
   val capch_i = Input(Bool())
-  val irq_o = Output(Bool())
 }
 class TimerIO extends MyAPB4Bundle {
   val tmr = new TimerBundle
+  val tmr_irq_o = Output(Bool())
   override def connect_extra(extra: Data): Unit = extra.asInstanceOf[TimerBundle] <> this.tmr
+  override def connect_irq(irq_o: Bool): Unit = irq_o := tmr_irq_o
 }
 class apb4_tmr extends BlackBoxWithAPB4(new TimerIO)
-class APB4Timer(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_tmr, new TimerBundle)
+class APB4Timer(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_tmr, new TimerBundle, true)
