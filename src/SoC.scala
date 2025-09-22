@@ -66,18 +66,23 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
     cpu.module.interrupt := intr
 
     // expose slave I/O interface as ports
-    val spi = IO(chiselTypeOf(lspi.module.extra))
-    val uart = IO(chiselTypeOf(luart0.module.extra))
-    val psram = IO(chiselTypeOf(lpsram.module.extra))
-    //val gpio = IO(chiselTypeOf(lgpio.module.gpio_bundle))
-    //val ps2 = IO(chiselTypeOf(lkeyboard.module.ps2_bundle))
-    //val vga = IO(chiselTypeOf(lvga.module.vga_bundle))
-    uart <> luart0.module.extra
-    spi <> lspi.module.extra
-    psram <> lpsram.module.extra
-    //gpio <> lgpio.module.gpio_bundle
-    //ps2 <> lkeyboard.module.ps2_bundle
-    //vga <> lvga.module.vga_bundle
+    def genIO[T <: Data](name: String, inner: T) = {
+      val outer = IO(chiselTypeOf(inner))
+      outer.suggestName(name)
+      outer <> inner
+      outer
+    }
+    def genAPB4DevIO[T <: Data](name: String, lmodule: APB4DevTemplate[T]) = genIO(name, lmodule.module.extra)
+    def genSomeAPB4DevIO[T <: Data](name: String, lmodule: Option[APB4DevTemplate[T]]) = {
+      if (false) Some(genAPB4DevIO(name, lmodule.get)) else None
+    }
+
+    val uart  = genAPB4DevIO("uart", luart0)
+    val spi   = genAPB4DevIO("spi", lspi)
+    val psram = genAPB4DevIO("psram", lpsram)
+    //val gpio  = genAPB4DevIO("gpio", lgpio)
+    //val ps2   = genAPB4DevIO("ps2", lkeyboard)
+    //val vga   = genAPB4DevIO("vga", lvga)
   }
 }
 
