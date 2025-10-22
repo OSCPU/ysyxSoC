@@ -39,6 +39,7 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
   val luart0    = LazyModule(new APBUart16550(AddrSpace(0x10000000, 0x8)))
   val lspi      = LazyModule(new APBSPI      (AddrSpace(0x10001000, 0x20)   ++     // SPI controller
                                               AddrSpace(0x30000000, 0x10000000)))  // XIP flash
+  val lrcu      = LazyModule(new APB4RCU     (AddrSpace(0x10002000, 0x1000)))
   val lrtc      = LazyModule(new APB4RTC     (AddrSpace(0x10004000, 0x20)))
   val lwdg      = LazyModule(new APB4WDG     (AddrSpace(0x10005000, 0x20)))
   val larchinfo = LazyModule(new APB4ArchInfo(AddrSpace(0x10006000, 0x10)))
@@ -71,7 +72,7 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
   val lpsram    = LazyModule(new APBPSRAM    (AddrSpace(0x80000000L, 0x400000)))
 
   List(lclint, lplic,
-       lspi, luart0,
+       lspi, luart0, lrcu,
        lrtc, lwdg, larchinfo,
        lgpio0, lgpio1, lgpio2, luart1, li2c, lps2, lpwm0, lpwm1, ltim0, ltim1, ltim2, ltim3,
        lqspi, li2s,
@@ -97,6 +98,16 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
 
     // external slower clock
     val clock_half = IO(Input(Bool()))
+
+    // RCU
+    lrcu.module.extra.ext_lfosc_clk_i := false.B
+    lrcu.module.extra.ext_hfosc_clk_i := false.B
+    lrcu.module.extra.ext_audosc_clk_i := false.B
+    lrcu.module.extra.ext_rst_n_i := false.B
+    lrcu.module.extra.wdt_rst_n_i := false.B
+    lrcu.module.extra.pll_en_i := false.B
+    lrcu.module.extra.clk_cfg_i := false.B
+    lrcu.module.extra.core_sel_i := false.B
 
     List(ltim0, ltim1, ltim2, ltim3).map { t =>
       t.module.extra.capch_i := false.B

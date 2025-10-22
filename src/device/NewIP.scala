@@ -190,3 +190,23 @@ class WDGIO extends MyAPB4Bundle {
 }
 class apb4_wdg extends BlackBoxWithAPB4(new WDGIO)
 class APB4WDG(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_wdg, new WDGBundle)
+
+class RCUBundle extends Bundle {
+  val ext_lfosc_clk_i  = Input(Bool())
+  val ext_hfosc_clk_i  = Input(Bool())
+  val ext_audosc_clk_i = Input(Bool())
+  val ext_rst_n_i      = Input(Bool())
+  val wdt_rst_n_i      = Input(Bool())
+  val pll_en_i         = Input(Bool())
+  val clk_cfg_i        = Input(UInt(3.W))
+  val core_sel_i       = Input(UInt(5.W))
+  val core_sel_o       = Output(UInt(5.W))
+  val clk_o            = Output(UInt(7.W))
+  val rst_n_o          = Output(UInt(7.W))
+}
+class RCUIO extends MyAPB4Bundle {
+  val rcu = new RCUBundle
+  override def connect_extra(extra: Data): Unit = extra.asInstanceOf[RCUBundle] <> this.rcu
+}
+class apb4_rcu extends BlackBoxWithAPB4(new RCUIO)
+class APB4RCU(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_rcu, new RCUBundle)
