@@ -140,10 +140,14 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
     val qspi_io = lqspi.module.extra
     val qspi_sck_o = IO(Output(Bool()))
     val qspi_nss_o = IO(Output(UInt(4.W)))
-    val qspi_dio  = IO(Vec(4, Analog(1.W)))
+    val qspi_en_o = IO(Output(UInt(4.W)))
+    val qspi_out_o = IO(Output(UInt(4.W)))
+    val qspi_in_i = IO(Input(UInt(4.W)))
     qspi_sck_o := qspi_io.spi_sck_o
     qspi_nss_o := qspi_io.spi_nss_o
-    qspi_io.spi_io_in_i := Cat((0 to 3).map(i => TriStateInBuf(qspi_dio(i), qspi_io.spi_io_out_o(i), qspi_io.spi_io_en_o(i))).reverse)
+    qspi_en_o := qspi_io.spi_io_en_o
+    qspi_out_o := qspi_io.spi_io_out_o
+    qspi_io.spi_io_in_i := qspi_in_i
 
     // connect interrupt signal
     val intr = IO(Input(Bool()))
@@ -195,6 +199,7 @@ class ysyxSoCFull(implicit p: Parameters) extends LazyModule {
 
     masic.ps2.ps2_clk_i := false.B
     masic.ps2.ps2_dat_i := false.B
+    masic.qspi_in_i := false.B
 
     val flash = Module(new flash)
     flash.io <> masic.spi
