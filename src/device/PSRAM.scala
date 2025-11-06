@@ -64,11 +64,17 @@ class PSRAMWrapper(address: BigInt) extends Module {
   val wdataReg: UInt = Reg(UInt(32.W))
   val wstrbReg: UInt = Reg(UInt(4.W))
 
-  // The nmi_psram will check the upper 8-bit to be 0x40 or 0x41
-  // so we need to remap the address.
-  val addressOffset:   UInt = io.in.paddr - address.U
-  val addressAligned:  UInt = Cat(addressOffset(31, 2), 0.U(2.W))
-  val remappedAddress: UInt = Cat("h40".U(8.W), addressAligned(23, 0)) //TODO: 0x41 as well?
+  // PSRAM controller has 4 chips, each 8MB (23-bit address + 2-bit chip select).
+  // Total addressable space: 32MB (0x0000_0000 ~ 0x01FF_FFFF after offset removal)
+  // Map input address range to PSRAM controller's expected format:
+  //   - Bits [31:28]: 0x4 (controller identification)
+  //   - Bits [27:25]: zero padding
+  //   - Bits [24:23]: chip select (handled by psram.sv)
+  //   - Bits [22:2]:  address within chip
+  //   - Bits [1:0]:   always 0 (word-aligned)
+  val cs:   UInt = io.in.paddr(24, 23)
+  val addr: UInt = io.in.paddr(22, 2)
+  val remappedAddress: UInt = Cat("h4".U(4.W), 0.U(3.W), cs, addr, 0.U(2.W))  // 32 bits total
 
   val psram_idle :: psram_active :: Nil = Enum(2)
   val psram_state: UInt = RegInit(psram_idle)
