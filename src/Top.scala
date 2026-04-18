@@ -1,6 +1,8 @@
 package ysyx
 
 import chisel3._
+import chisel3.util.log2Up
+
 import org.chipsalliance.cde.config.{Parameters, Config}
 import freechips.rocketchip.system._
 import freechips.rocketchip.diplomacy.LazyModule
@@ -8,6 +10,9 @@ import freechips.rocketchip.diplomacy.LazyModule
 object Config {
   def idBits: Int = 4
   def isMini: Boolean = false
+  def numCore: Int = 1
+
+  def coreSelWidth = log2Up(numCore)
 }
 
 class ysyxSoCTop extends Module {
@@ -18,6 +23,7 @@ class ysyxSoCTop extends Module {
   val mdut = Module(dut.module)
   mdut.dontTouchPorts()
   mdut.externalPins := DontCare
+  mdut.coreSel := DontCare
 }
 
 object Elaborate extends App {
@@ -30,7 +36,7 @@ object Elaborate extends App {
     "disallowExpressionInliningInPorts"
   ).reduce(_ + "," + _))
 
-  val firtoolOptions = Array("--preserve-aggregate=none", "--preserve-values=strip") ++ firtoolLoweringOptions ++
-                       Array("--disable-annotation-unknown")
+  val firtoolOptions = // Array("--preserve-aggregate=none", "--preserve-values=strip") ++
+                       firtoolLoweringOptions ++ Array("--disable-annotation-unknown")
   circt.stage.ChiselStage.emitSystemVerilogFile(new ysyxSoCTop, args, firtoolOptions)
 }

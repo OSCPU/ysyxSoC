@@ -104,6 +104,10 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
     val intr = IO(Input(Bool()))
     cpu.module.interrupt := (if (isMini) false.B else lplic.get.module.irq_o)
 
+    // for core multiplexing
+    val coreSel = IO(Input(UInt(Config.coreSelWidth.W)))
+    cpu.module.io_coreSel := coreSel
+
     lrcu.map { t =>
       val p = t.module.extra
       p.ext_lfosc_clk_i := false.B
@@ -206,6 +210,10 @@ class ysyxSoCFull(implicit p: Parameters) extends LazyModule {
     divReg := !divReg
     masic.clock_half := divReg
     masic.intr := false.B
+
+    // for core multiplexing
+    val coreSel = IO(Input(UInt(Config.coreSelWidth.W)))
+    masic.coreSel := coreSel
 
     if (!isMini) {
       val gpio_led = Module(new gpio_led_model)
