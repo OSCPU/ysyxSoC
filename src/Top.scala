@@ -33,7 +33,7 @@ object Elaborate extends App {
     "disallowLocalVariables",
     "disallowPackedArrays",
     "locationInfoStyle=wrapInAtSquareBracket",
-    "disallowExpressionInliningInPorts"
+//    "disallowExpressionInliningInPorts"
   ).reduce(_ + "," + _))
 
   val firtoolOptions = // Array("--preserve-aggregate=none", "--preserve-values=strip") ++

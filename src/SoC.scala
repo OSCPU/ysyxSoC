@@ -24,7 +24,7 @@ object AXI4SlaveNodeGenerator {
       )).toSeq)
 }
 
-class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
+class ysyxSoC(implicit p: Parameters) extends LazyModule {
   val xbar = AXI4Xbar()
   val apbxbar = LazyModule(new APBFanout).node
   val cpu = LazyModule(new CPU(idBits = Config.idBits))
@@ -193,6 +193,39 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
     //val gpio  = genAPB4DevIO("gpio", lgpio)
     //val ps2   = genAPB4DevIO("ps2", lkeyboard)
     //val vga   = genAPB4DevIO("vga", lvga)
+  }
+}
+
+class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
+  val soc = LazyModule(new ysyxSoC)
+  override lazy val module = new Impl
+  class Impl extends LazyModuleImp(this) with DontTouch {
+    val msoc = soc.module
+
+    def genPAD[T <: Data](name: String, inner: T): T = {
+      val outer = IO(chiselTypeOf(inner))
+      outer.suggestName(name)
+      GenPAD(outer, inner)
+      dontTouch(outer)
+      outer
+    }
+    def genPAD[T <: Data](name: String, inner: Option[T]): Option[T] = {
+      if (inner != None) Some(genPAD(name, inner.get)) else None
+    }
+
+    GenPAD(clock, msoc.clock)
+    GenPAD(reset, msoc.reset)
+    val clock_half = genPAD("clock_half", msoc.clock_half)
+    val coreSel = genPAD("coreSel", msoc.coreSel)
+    val intr = genPAD("intr", msoc.intr)
+
+    val uart0 = genPAD("uart0", msoc.uart0)
+    val spi   = genPAD("spi", msoc.spi)
+    val psram = genPAD("psram", msoc.psram)
+    val uart1 = genPAD("uart1", msoc.uart1)
+    val ps2   = genPAD("ps2", msoc.ps2)
+    val gpio  = genPAD("gpio", msoc.gpio)
+    val qspi  = genPAD("qspi", msoc.qspi)
   }
 }
 
