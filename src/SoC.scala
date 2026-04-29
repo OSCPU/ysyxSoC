@@ -41,15 +41,9 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
   val lmrom = LazyModule(new AXI4MROM(AddressSet.misaligned(0x20000000, 0x1000)))
   val sramNode = AXI4RAM(AddressSet.misaligned(0x0f000000, 0x2000).head, false, true, 4, None, Nil, false)
 
-  val sdramAddressSet = AddressSet.misaligned(0xa0000000L, 0x2000000)
-  val lsdram_apb = if (!Config.sdramUseAXI) Some(LazyModule(new APBSDRAM (sdramAddressSet))) else None
-  val lsdram_axi = if ( Config.sdramUseAXI) Some(LazyModule(new AXI4SDRAM(sdramAddressSet))) else None
-
   List(lspi.node, luart.node, lpsram.node, lgpio.node, lkeyboard.node, lvga.node).map(_ := apbxbar)
   List(apbxbar := APBDelayer() := AXI4ToAPB() := AXI4Buffer(), lmrom.node, sramNode).map(_ := xbar2)
   xbar2 := AXI4UserYanker(Some(1)) := AXI4Fragmenter() := xbar
-  if (Config.sdramUseAXI) lsdram_axi.get.node := ysyx.AXI4Delayer() := xbar
-  else                    lsdram_apb.get.node := apbxbar
   xbar := cpu.masterNode
 
   override lazy val module = new Impl
@@ -60,21 +54,16 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
     val intr = IO(Input(Bool()))
     cpu.module.interrupt := intr
 
-    val sdramBundle = if (Config.sdramUseAXI) lsdram_axi.get.module.sdram_bundle
-                      else                    lsdram_apb.get.module.sdram_bundle
-
     // expose slave I/O interface as ports
     val spi = IO(chiselTypeOf(lspi.module.spi_bundle))
     val uart = IO(chiselTypeOf(luart.module.uart))
     val psram = IO(chiselTypeOf(lpsram.module.qspi_bundle))
-    val sdram = IO(chiselTypeOf(sdramBundle))
     val gpio = IO(chiselTypeOf(lgpio.module.gpio_bundle))
     val ps2 = IO(chiselTypeOf(lkeyboard.module.ps2_bundle))
     val vga = IO(chiselTypeOf(lvga.module.vga_bundle))
     uart <> luart.module.uart
     spi <> lspi.module.spi_bundle
     psram <> lpsram.module.qspi_bundle
-    sdram <> sdramBundle
     gpio <> lgpio.module.gpio_bundle
     ps2 <> lkeyboard.module.ps2_bundle
     vga <> lvga.module.vga_bundle
@@ -101,8 +90,6 @@ class ysyxSoCFull(implicit p: Parameters) extends LazyModule {
 
     val psram = Module(new psram)
     psram.io <> masic.psram
-    val sdram = Module(new sdram)
-    sdram.io <> masic.sdram
 
     val externalPins = IO(new Bundle{
       val gpio = chiselTypeOf(masic.gpio)

@@ -7,7 +7,6 @@ import freechips.rocketchip.diplomacy.LazyModule
 
 object Config {
   def idBits: Int = 4
-  def sdramUseAXI: Boolean = false
 }
 
 class ysyxSoCTop extends Module {
