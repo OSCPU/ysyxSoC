@@ -137,7 +137,7 @@ module psram_core (
       case (r_fsm_state)
         FSM_INIT: begin
           if (r_boot_cnt != '0) r_boot_cnt <= r_boot_cnt - 1'b1;
-          else if (cfg_init_i) r_fsm_state <= FSM_RSTEN;
+          else r_fsm_state <= FSM_RSTEN;
         end
         FSM_RSTEN: begin
           r_xfer_ca         <= {8'h66, 24'd0};
