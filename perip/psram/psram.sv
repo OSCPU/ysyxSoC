@@ -105,6 +105,7 @@ module nmi_psram (
   logic        s_core_idle;
   logic        s_mem_valid_re;
 
+  wire nmi_valid_real = nmi_valid && s_init_done;
 
   // verilog_format: off
   assign psram_nss_o[0]   = (~s_init_done) || (s_init_done && nmi_addr[24:23] == 2'd0) ? s_psram_ce : 1'b1;
@@ -119,9 +120,9 @@ module nmi_psram (
   // verilog_format: on
 
 
-  assign s_mem_sel     = nmi_addr[31:24] == `PSRAM_START;
+  assign s_mem_sel     = nmi_addr[31:24] == `PSRAM_START && s_init_done;
   assign s_cfg_reg_sel = nmi_addr[31:28] == `NMI_IP_START && nmi_addr[15:8] == `NMI_PSRAM_START;
-  assign nmi_ready     = s_mem_sel ? s_mem_ready : 1'b1;
+  assign nmi_ready     = (s_mem_sel ? s_mem_ready : 1'b1) && s_init_done;
   always_comb begin
     nmi_rdata = '0;
     if (s_mem_sel) begin
@@ -138,21 +139,21 @@ module nmi_psram (
   // wait cycles(mmio)
   always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (~rst_n_i) r_cfg_wait <= 5'd18;
-    else if (nmi_valid && nmi_wstrb[0] && s_cfg_reg_sel && nmi_addr[7:0] == `NMI_PSRAM_WAIT) begin
+    else if (nmi_valid_real && nmi_wstrb[0] && s_cfg_reg_sel && nmi_addr[7:0] == `NMI_PSRAM_WAIT) begin
       r_cfg_wait <= nmi_wdata[4:0];
     end
   end
   // extra cycle for tCHD(mmio)
   always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (~rst_n_i) r_cfg_chd <= 3'd4;
-    else if (nmi_valid && nmi_wstrb[0] && s_cfg_reg_sel && nmi_addr[7:0] == `NMI_PSRAM_CHD) begin
+    else if (nmi_valid_real && nmi_wstrb[0] && s_cfg_reg_sel && nmi_addr[7:0] == `NMI_PSRAM_CHD) begin
       r_cfg_chd <= nmi_wdata[2:0];
     end
   end
   // init device/switch qpi mode
   always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (~rst_n_i) r_cfg_init <= '0;
-    else if (nmi_valid && nmi_wstrb[0] && s_cfg_reg_sel && nmi_addr[7:0] == `NMI_PSRAM_INIT) begin
+    else if (nmi_valid_real && nmi_wstrb[0] && s_cfg_reg_sel && nmi_addr[7:0] == `NMI_PSRAM_INIT) begin
       r_cfg_init <= nmi_wdata[0];
     end
   end
@@ -160,7 +161,7 @@ module nmi_psram (
   edge_det_sync_re #(1) u_mem_valid_edge_det_sync_re (
       clk_i,
       rst_n_i,
-      nmi_valid,
+      nmi_valid_real,
       s_mem_valid_re
   );
 
