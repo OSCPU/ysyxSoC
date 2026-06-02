@@ -9,21 +9,27 @@ import org.chipsalliance.cde.config.Parameters
 import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.util._
 
-class ESP_PSRAM64H extends BlackBox {
-  val io = IO(new Bundle {
-    val sclk: Clock  = Input(Clock())
-    val csn:  Bool   = Input(Bool())
-    val sio:  Analog = Analog(4.W)
-  })
-}
+class ESPWrapper(nss: Int = 4) extends BlackBox(Map("nss" -> nss)) with HasBlackBoxInline {
+  val io = IO(Flipped(new PSRAMBundle(nss)))
 
-class ESPWrapper extends RawModule {
-  val io:       PSRAMQSPIBundle = IO(Flipped(new PSRAMQSPIBundle))
-  val espPsram: ESP_PSRAM64H    = Module(new ESP_PSRAM64H)
-
-  espPsram.io.sclk := io.sck_o.asClock
-  espPsram.io.csn  := io.nss_o(0)
-  io.io_di_i   := TriStateInBuf(espPsram.io.sio, io.io_do_o, io.io_oe_o.orR)
+  setInline("ESPWrapper.v",
+   s"""module ESPWrapper #(
+      |  parameter nss = 4
+      |)(
+      |  input sck_o,
+      |  input [nss-1:0] nss_o,
+      |  inout dio_0,
+      |  inout dio_1,
+      |  inout dio_2,
+      |  inout dio_3
+      |);
+      |  ESP_PSRAM64H psram(
+      |   .sclk(sck_o),
+      |   .csn(nss_o[0]),
+      |   .sio({dio_3, dio_2, dio_1, dio_0})  // bidirection for inout
+      | );
+      |endmodule
+    """.stripMargin)
 }
 
 class NmiIO extends Bundle {
@@ -35,13 +41,20 @@ class NmiIO extends Bundle {
   val ready: Bool = Output(Bool())
 }
 
-class PSRAMQSPIBundle(nss: Int = 4) extends Bundle {
-  val sck_o:    Bool = Output(Bool())
-  val nss_o:    UInt = Output(UInt(nss.W))
-  val io_oe_o:  UInt = Output(UInt(4.W))
-  val io_di_i:  UInt = Input(UInt(4.W))
-  val io_do_o:  UInt = Output(UInt(4.W))
-  val irq_o:    Bool = Output(Bool())
+class SPIBaseBundle(nss: Int = 4) extends Bundle {
+  val sck_o = Output(Bool())
+  val nss_o = Output(UInt(nss.W))
+}
+
+class PSRAMCtrlBundle(nss: Int = 4) extends SPIBaseBundle(nss) {
+  val io_oe_o = Output(UInt(4.W))
+  val io_di_i = Input(UInt(4.W))
+  val io_do_o = Output(UInt(4.W))
+  val irq_o   = Output(Bool())
+}
+
+class PSRAMBundle(nss: Int = 4) extends SPIBaseBundle(nss) {
+  val dio = Vec(4, Analog(1.W))
 }
 
 class nmi_psram extends BlackBox {
@@ -49,14 +62,14 @@ class nmi_psram extends BlackBox {
     val clk_i:   Clock           = Input(Clock())
     val rst_n_i: Bool            = Input(Bool())
     val nmi:     NmiIO           = new NmiIO
-    val psram:   PSRAMQSPIBundle = new PSRAMQSPIBundle
+    val psram:   PSRAMCtrlBundle = new PSRAMCtrlBundle
   })
 }
 
 class PSRAMWrapper(address: BigInt) extends Module {
   val io           = IO(new Bundle {
     val in:   APBBundle       = Flipped(new APBBundle(APBBundleParameters(addrBits = 32, dataBits = 32)))
-    val qspi: PSRAMQSPIBundle = new PSRAMQSPIBundle
+    val qspi: PSRAMCtrlBundle = new PSRAMCtrlBundle
   })
   val npsram: nmi_psram = Module(new nmi_psram)
 
@@ -107,7 +120,7 @@ class PSRAMWrapper(address: BigInt) extends Module {
 }
 
 class APBPSRAM(address: Seq[AddressSet])(implicit p: Parameters)
-  extends APB4DevTemplate(address, new PSRAMQSPIBundle)((in: APBBundle, outer: LazyModuleImp, irq_o: Bool, extra) => {
+  extends APB4DevTemplate(address, new PSRAMCtrlBundle)((in: APBBundle, outer: LazyModuleImp, irq_o: Bool, extra) => {
   // Check if the address set has only one element and get the base address
   require(address.length == 1, "APBPSRAM requires only one address set now")
   val mpsram = Module(new PSRAMWrapper(address.head.base))

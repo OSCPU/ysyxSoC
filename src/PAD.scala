@@ -2,7 +2,7 @@ package ysyx
 
 import chisel3._
 import chisel3.util._
-import chisel3.experimental.Analog
+import chisel3.experimental.{Analog, attach}
 import chisel3.reflect.DataMirror // 导入关键的反射API
 
 // for clock
@@ -32,7 +32,7 @@ class tc_io_out_pad extends BlackBox {
 
 class tc_io_tri_pad extends BlackBox {
   val io = IO(new Bundle {
-    val pad = Output(Bool())
+    val pad = Analog(1.W)
     val c2p = Input(Bool())  // chip to pad
     val c2p_en = Input(Bool())
     val p2c = Output(Bool())
@@ -48,6 +48,13 @@ object GenPAD {
   def output(internal: Bool) = {
     val pad = Module(new tc_io_out_pad)
     pad.io.c2p := internal
+    pad.io.pad
+  }
+  def inout(p2c: Bool, c2p: Bool, c2pEn: Bool) = {
+    val pad = Module(new tc_io_tri_pad)
+    pad.io.c2p_en := c2pEn
+    pad.io.c2p := c2p
+    p2c := pad.io.p2c
     pad.io.pad
   }
   def clock(clkIn: Clock) = {
@@ -80,5 +87,16 @@ object GenPAD {
       case (p: Vec[_], i: Vec[_]) =>
         (p zip i).map { case (p0, i0) => apply(p0, i0) }
     }
+  }
+  def apply(port: Vec[Analog], p2c: UInt, c2p: UInt, c2pEn: UInt): Unit = {
+    require(p2c.getWidth == c2p.getWidth)
+    require(p2c.getWidth == c2pEn.getWidth)
+    val list = (0 until p2c.getWidth).map(i => {
+      val p2ci = Wire(Bool())
+      val pad = inout(p2ci, c2p(i), c2pEn(i))
+      (p2ci, pad)
+    })
+    p2c := Cat(list.map(_._1).reverse)
+    (port zip list.map(_._2)).map(x => attach(x._1, x._2))
   }
 }

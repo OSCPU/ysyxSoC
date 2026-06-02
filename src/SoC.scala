@@ -212,6 +212,13 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
     def genPAD[T <: Data](name: String, inner: Option[T]): Option[T] = {
       if (inner != None) Some(genPAD(name, inner.get)) else None
     }
+    def genPAD(name: String, p2c: UInt, c2p: UInt, c2pEn: UInt): Vec[Analog] = {
+      val outer = IO(Vec(p2c.getWidth, Analog(1.W)))
+      outer.suggestName(name)
+      GenPAD(outer, p2c, c2p, c2pEn)
+      dontTouch(outer)
+      outer
+    }
 
     GenPAD(clock, msoc.clock)
     GenPAD(reset, msoc.reset)
@@ -221,7 +228,12 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
 
     val uart0 = genPAD("uart0", msoc.uart0)
     val spi   = genPAD("spi", msoc.spi)
-    val psram = genPAD("psram", msoc.psram)
+
+    val psram = msoc.psram.get
+    val psram_sck_o = genPAD("psram_sck_o", psram.sck_o)
+    val psram_nss_o = genPAD("psram_nss_o", psram.nss_o)
+    val psram_dio   = genPAD("psram_dio", psram.io_di_i, psram.io_do_o, psram.io_oe_o)
+
     val uart1 = genPAD("uart1", msoc.uart1)
     val ps2   = genPAD("ps2", msoc.ps2)
     val gpio  = genPAD("gpio", msoc.gpio)
@@ -266,8 +278,10 @@ class ysyxSoCFull(implicit p: Parameters) extends LazyModule {
     bitrev.io.ss := masic.spi.get.ss(7)
     masic.spi.get.miso := List(bitrev.io, flash.io).map(_.miso).reduce(_&&_)
 
-    val psram = Module(new ESPWrapper)
-    psram.io <> masic.psram.get
+    val espPsram = Module(new ESPWrapper)
+    espPsram.io.sck_o := masic.psram_sck_o
+    espPsram.io.nss_o  := masic.psram_nss_o
+    espPsram.io.dio <> masic.psram_dio
 
     val externalPins = IO(new Bundle{
       //val gpio = chiselTypeOf(masic.gpio)
