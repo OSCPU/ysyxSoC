@@ -120,20 +120,16 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
       p.core_sel_i := false.B
     }
 
-    List(ltim0, ltim1, ltim2, ltim3).map { t => t.map { x =>
-      val p = x.module.extra
-      p.capch_i := false.B
-      p.exclk_i := clock_half
-    }}
+    List(ltim0, ltim1, ltim2, ltim3).map(_.map(_.module.extra.exclk_i := clock_half))
 
-    List(lgpio0, lgpio1, lgpio2).map { t => t.map { x =>
+    List(lgpio0, lgpio1, lgpio2).map(_.map { x =>
       val p = x.module.extra
       p.gpio_in_i := 0.U
       p.gpio_alt_0_out_i := 0.U
       p.gpio_alt_0_dir_i := 0.U
       p.gpio_alt_1_out_i := 0.U
       p.gpio_alt_1_dir_i := 0.U
-    }}
+    })
 
     lrtc.map { t =>
       val p = t.module.extra
@@ -141,33 +137,11 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
       p.rtc_rst_n_i := !reset.asBool
     }
 
-    lwdg.map { t =>
-      val p = t.module.extra
-      p.rtc_clk_i := clock_half
-    }
-
-    li2c.map { t =>
-      val p = t.module.extra
-      val i2c_scl = IO(Analog(1.W))
-      val i2c_sda = IO(Analog(1.W))
-      p.scl_i := TriStateInBuf(i2c_scl, p.scl_o, p.scl_dir_o)
-      p.sda_i := TriStateInBuf(i2c_sda, p.sda_o, p.sda_dir_o)
-    }
-
-    li2s.map { t =>
-      val p = t.module.extra
-      val i2s_sck = IO(Analog(1.W))
-      val i2s_ws  = IO(Analog(1.W))
-      p.sck_i := TriStateInBuf(i2s_sck, p.sck_o, p.sck_en_o)
-      p.ws_i  := TriStateInBuf(i2s_ws, p.ws_o, p.ws_en_o)
-      p.sd_i := false.B
-    }
+    lwdg.map(_.module.extra.rtc_clk_i := clock_half)
 
     // connect interrupt signal
-    lplic.map { t =>
-      t.module.extra.irq_i := Cat(List(lgpio0, lgpio1, lgpio2, lrtc, li2c, lqspi, li2s,
-        lpwm0, lpwm1, ltim0, ltim1, ltim2, ltim3, lps2).map(_.get.module.irq_o)) ## intr
-    }
+    lplic.map(_.module.extra.irq_i := Cat(List(lgpio0, lgpio1, lgpio2, lrtc, li2c, lqspi, li2s,
+      lpwm0, lpwm1, ltim0, ltim1, ltim2, ltim3, lps2).map(_.get.module.irq_o)) ## intr)
 
     // expose slave I/O interface as ports
     def _genIO[T <: Data](name: String, inner: T) = {
@@ -179,17 +153,29 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
     def genIO[T <: Data](name: String, inner: () => T, cond: Boolean = true) = {
       if (cond) Some(_genIO(name, inner())) else None
     }
-    def genAPB4DevIO[T <: Data](name: String, lmodule: Option[APB4DevTemplate[T]], cond: Boolean = true) = {
-      genIO(name, () => lmodule.get.module.extra, cond)
+    def genAPB4DevIO[T <: Data](name: String, lmodule: Option[APB4DevTemplate[T]]) = {
+      genIO(name, () => lmodule.get.module.extra, lmodule != None)
     }
 
     val uart0 = genAPB4DevIO("uart0", luart0)
     val spi   = genAPB4DevIO("spi", lspi)
     val psram = genAPB4DevIO("psram", lpsram)
-    val uart1 = genAPB4DevIO("uart1", luart1, !isMini)
-    val ps2   = genAPB4DevIO("ps2", lps2, !isMini)
-    val gpio  = genIO("gpio", () => lgpio0.get.module.extra.gpio_out_o, !isMini)
-    val qspi  = genAPB4DevIO("qspi", lqspi, !isMini)
+
+    //val gpio0 = genAPB4DevIO("gpio0", lgpio0)
+    //val gpio1 = genAPB4DevIO("gpio1", lgpio1)
+    //val gpio2 = genAPB4DevIO("gpio2", lgpio2)
+    val uart1 = genAPB4DevIO("uart1", luart1)
+    val i2c   = genAPB4DevIO("i2c", li2c)
+    val ps2   = genAPB4DevIO("ps2", lps2)
+    val pwm0  = genAPB4DevIO("pwm0", lpwm0)
+    val pwm1  = genAPB4DevIO("pwm1", lpwm1)
+    val tim0_capch = genIO("tim0_capch", () => ltim0.get.module.extra.capch_i, ltim0 != None)
+    val tim1_capch = genIO("tim1_capch", () => ltim1.get.module.extra.capch_i, ltim1 != None)
+    val tim2_capch = genIO("tim2_capch", () => ltim2.get.module.extra.capch_i, ltim2 != None)
+    val tim3_capch = genIO("tim3_capch", () => ltim3.get.module.extra.capch_i, ltim3 != None)
+    val qspi  = genAPB4DevIO("qspi", lqspi)
+    val i2s   = genAPB4DevIO("i2s", li2s)
+
     //val gpio  = genAPB4DevIO("gpio", lgpio)
     //val ps2   = genAPB4DevIO("ps2", lkeyboard)
     //val vga   = genAPB4DevIO("vga", lvga)
@@ -219,6 +205,9 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
       dontTouch(outer)
       outer
     }
+    def genIOPAD(name: String, p2c_c2p_c2pEn: Option[(UInt, UInt, UInt)]): Option[Vec[Analog]] = {
+      p2c_c2p_c2pEn.flatMap(x => Some(genPAD(name, x._1, x._2, x._3)))
+    }
 
     GenPAD(clock, msoc.clock)
     GenPAD(reset, msoc.reset)
@@ -234,17 +223,28 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
     val psram_nss_o = genPAD("psram_nss_o", psram.nss_o)
     val psram_dio   = genPAD("psram_dio", psram.io_di_i, psram.io_do_o, psram.io_oe_o)
 
-    val uart1 = genPAD("uart1", msoc.uart1)
-    val ps2   = genPAD("ps2", msoc.ps2)
-    val gpio  = genPAD("gpio", msoc.gpio)
-    val qspi  = genPAD("qspi", msoc.qspi)
+    val uart1      = genPAD("uart1", msoc.uart1)
+    val i2c_scl    = genIOPAD("i2c_scl", msoc.i2c.flatMap(x => Some(x.scl_i, x.scl_o, x.scl_dir_o)))
+    val i2c_sda    = genIOPAD("i2c_sda", msoc.i2c.flatMap(x => Some(x.sda_i, x.sda_o, x.sda_dir_o)))
+    val ps2        = genPAD("ps2", msoc.ps2)
+    val pwm0       = genPAD("pwm0", msoc.pwm0)
+    val pwm1       = genPAD("pwm1", msoc.pwm1)
+    val tim0_capch = genPAD("tim0_capch", msoc.tim0_capch)
+    val tim1_capch = genPAD("tim1_capch", msoc.tim1_capch)
+    val tim2_capch = genPAD("tim2_capch", msoc.tim2_capch)
+    val tim3_capch = genPAD("tim3_capch", msoc.tim3_capch)
+    val qspi_sck_o = genPAD("qspi_sck_o", msoc.qspi.flatMap(x => Some(x.spi_sck_o)))
+    val qspi_nss_o = genPAD("qspi_nss_o", msoc.qspi.flatMap(x => Some(x.spi_nss_o)))
+    val qspi_dio   = genIOPAD("qspi_dio", msoc.qspi.flatMap(x => Some(x.spi_io_in_i, x.spi_io_out_o, x.spi_io_en_o)))
+    val i2s_sck    = genIOPAD("i2s_sck", msoc.i2s.flatMap(x => Some(x.sck_i, x.sck_o, x.sck_en_o)))
+    val i2s_ws     = genIOPAD("i2s_ws",  msoc.i2s.flatMap(x => Some(x.ws_i,  x.ws_o,  x.ws_en_o )))
+    val i2s_sd_i   = genPAD("i2s_sd_i", msoc.i2s.flatMap(x => Some(x.sd_i)))
   }
 }
 
 class ysyxSoCFull(implicit p: Parameters) extends LazyModule {
   val asic = LazyModule(new ysyxSoCASIC)
   ElaborationArtefacts.add("graphml", graphML)
-  val isMini = Config.isMini
 
   override lazy val module = new Impl
   class Impl extends LazyModuleImp(this) with DontTouch {
@@ -260,15 +260,20 @@ class ysyxSoCFull(implicit p: Parameters) extends LazyModule {
     val coreSel = IO(Input(UInt(Config.coreSelWidth.W)))
     masic.coreSel := coreSel
 
-    if (!isMini) {
-      val gpio_led = Module(new gpio_led_model)
-      gpio_led.io.led_i := masic.gpio.get
-
-      masic.ps2.get.ps2_clk_i := false.B
-      masic.ps2.get.ps2_dat_i := false.B
-      masic.qspi.get.spi_io_in_i := false.B
-      masic.uart1.get.uart_rx_i := false.B
-    }
+    //val gpio_led = Module(new gpio_led_model)
+    //gpio_led.io.led_i := masic.gpio.get
+    masic.uart1.map(_ <> DontCare)
+    masic.i2c_scl.map(_ <> DontCare)
+    masic.i2c_sda.map(_ <> DontCare)
+    masic.ps2.map(_ <> DontCare)
+    masic.tim0_capch.map(_ <> DontCare)
+    masic.tim1_capch.map(_ <> DontCare)
+    masic.tim2_capch.map(_ <> DontCare)
+    masic.tim3_capch.map(_ <> DontCare)
+    masic.qspi_dio.map(_ <> DontCare)
+    masic.i2s_sck.map(_ <> DontCare)
+    masic.i2s_ws.map(_ <> DontCare)
+    masic.i2s_sd_i.map(_ <> DontCare)
 
     val flash = Module(new flash)
     flash.io <> masic.spi.get
