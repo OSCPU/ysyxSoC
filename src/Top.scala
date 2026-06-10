@@ -16,11 +16,11 @@ object Config {
   def coreSelWidth = log2Up(numCore)
 }
 
-class ysyxSoCTop extends Module {
+class ElaborateTop extends Module {
   implicit val config: Parameters = new Config(new Edge32BitConfig ++ new DefaultRV32Config)
 
   val io = IO(new Bundle { })
-  val dut = LazyModule(new ysyxSoCFull)
+  val dut = LazyModule(new SimTop)
   val mdut = Module(dut.module)
   mdut.dontTouchPorts()
   mdut.externalPins := DontCare
@@ -39,5 +39,5 @@ object Elaborate extends App {
 
   val firtoolOptions = // Array("--preserve-aggregate=none", "--preserve-values=strip") ++
                        firtoolLoweringOptions ++ Array("--disable-annotation-unknown")
-  circt.stage.ChiselStage.emitSystemVerilogFile(new ysyxSoCTop, args, firtoolOptions)
+  circt.stage.ChiselStage.emitSystemVerilogFile(new ElaborateTop, args, firtoolOptions)
 }

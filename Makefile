@@ -1,5 +1,5 @@
-V_FILE_GEN   = build/ysyxSoCTop.sv
-V_FILE_FINAL = build/ysyxSoCFull.v
+V_FILE_GEN   = build/ElaborateTop.sv
+V_FILE_FINAL = build/ElaborateTop.v
 SCALA_FILES = $(shell find src/ -name "*.scala")
 
 # Firtool version

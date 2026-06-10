@@ -186,7 +186,7 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
   }
 }
 
-class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
+class asicTop(implicit p: Parameters) extends LazyModule {
   val soc = LazyModule(new ysyxSoC)
   override lazy val module = new Impl
   class Impl extends LazyModuleImp(this) with DontTouch {
@@ -250,8 +250,8 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
   }
 }
 
-class ysyxSoCFull(implicit p: Parameters) extends LazyModule {
-  val asic = LazyModule(new ysyxSoCASIC)
+class SimTop(implicit p: Parameters) extends LazyModule {
+  val asic = LazyModule(new asicTop)
   ElaborationArtefacts.add("graphml", graphML)
 
   override lazy val module = new Impl
