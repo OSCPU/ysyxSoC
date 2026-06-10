@@ -1,4 +1,4 @@
-module ps2_top_apb(
+module mykbd_top_apb(
   input         clock,
   input         reset,
   input  [31:0] in_paddr,
@@ -12,8 +12,8 @@ module ps2_top_apb(
   output [31:0] in_prdata,
   output        in_pslverr,
 
-  input         ps2_clk,
-  input         ps2_data
+  input         kbd_clk,
+  input         kbd_data
 );
 
 endmodule

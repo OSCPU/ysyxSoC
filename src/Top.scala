@@ -11,6 +11,7 @@ object Config {
   def idBits: Int = 4
   def isMini: Boolean = false
   def numCore: Int = 1
+  def hasHomework: Boolean = false
 
   def coreSelWidth = log2Up(numCore)
 }

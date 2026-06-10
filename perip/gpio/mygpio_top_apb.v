@@ -1,4 +1,4 @@
-module vga_top_apb(
+module mygpio_top_apb(
   input         clock,
   input         reset,
   input  [31:0] in_paddr,
@@ -12,12 +12,16 @@ module vga_top_apb(
   output [31:0] in_prdata,
   output        in_pslverr,
 
-  output [7:0]  vga_r,
-  output [7:0]  vga_g,
-  output [7:0]  vga_b,
-  output        vga_hsync,
-  output        vga_vsync,
-  output        vga_valid
+  output [15:0] gpio_out,
+  input  [15:0] gpio_in,
+  output [7:0]  gpio_seg_0,
+  output [7:0]  gpio_seg_1,
+  output [7:0]  gpio_seg_2,
+  output [7:0]  gpio_seg_3,
+  output [7:0]  gpio_seg_4,
+  output [7:0]  gpio_seg_5,
+  output [7:0]  gpio_seg_6,
+  output [7:0]  gpio_seg_7
 );
 
 endmodule

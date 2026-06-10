@@ -8,7 +8,7 @@ import org.chipsalliance.cde.config.Parameters
 import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.util._
 
-class VGAIO extends Bundle {
+class MyVGAIO extends Bundle {
   val r = Output(UInt(8.W))
   val g = Output(UInt(8.W))
   val b = Output(UInt(8.W))
@@ -17,24 +17,24 @@ class VGAIO extends Bundle {
   val valid = Output(Bool())
 }
 
-class VGACtrlIO extends Bundle {
+class MyVGACtrlIO extends Bundle {
   val clock = Input(Clock())
   val reset = Input(Bool())
   val in = Flipped(new APBBundle(APBBundleParameters(addrBits = 32, dataBits = 32)))
-  val vga = new VGAIO
+  val vga = new MyVGAIO
 }
 
-class vga_top_apb extends BlackBox {
-  val io = IO(new VGACtrlIO)
+class myvga_top_apb extends BlackBox {
+  val io = IO(new MyVGACtrlIO)
 }
 
-class vgaChisel extends Module {
-  val io = IO(new VGACtrlIO)
+class myvgaChisel extends Module {
+  val io = IO(new MyVGACtrlIO)
 }
 
-class APBVGA(address: Seq[AddressSet])(implicit p: Parameters)
-  extends APB4DevTemplate(address, new VGAIO)((in: APBBundle, outer: LazyModuleImp, irq_o: Bool, extra) => {
-  val mvga = Module(new vga_top_apb)
+class APB4MyVGA(address: Seq[AddressSet])(implicit p: Parameters)
+  extends APB4DevTemplate(address, new MyVGAIO)((in: APBBundle, outer: LazyModuleImp, irq_o: Bool, extra) => {
+  val mvga = Module(new myvga_top_apb)
   mvga.io.clock := outer.clock
   mvga.io.reset := outer.reset
   mvga.io.in <> in

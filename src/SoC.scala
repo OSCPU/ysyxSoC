@@ -30,6 +30,7 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
   val cpu = LazyModule(new CPU(idBits = Config.idBits))
 
   val isMini = Config.isMini
+  val hasHomework = Config.hasHomework
   def AddrSpace(base: BigInt, len: BigInt = 0x1000) = AddressSet.misaligned(base, len)
   def DefDevice[T <: LazyModule](dev: () => T, cond: Boolean = true) = {
     if (cond) Some(LazyModule(dev())) else None
@@ -70,9 +71,12 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
   val lrng      = DefDevice(() => new APB4RNG     (AddrSpace(0x10300000, 0x10)), !isMini)
   val lcrc      = DefDevice(() => new APB4CRC     (AddrSpace(0x10301000, 0x20)), !isMini)
 
-//val lgpio     = DefDevice(() => new APBGPIO     (AddrSpace(0x10002000, 0x10)))
-//val lkeyboard = DefDevice(() => new APBKeyboard (AddrSpace(0x10011000, 0x8)))
-//val lvga      = DefDevice(() => new APBVGA      (AddrSpace(0x21000000, 0x200000)))
+  // homework
+  val lmygpio   = DefDevice(() => new APB4MyGPIO  (AddrSpace(0x20001000, 0x10)), hasHomework)
+  val lmykbd    = DefDevice(() => new APB4MyKbd   (AddrSpace(0x20002000, 0x8)), hasHomework)
+  val lmyvga    = DefDevice(() => new APB4MyVGA   (AddrSpace(0x21000000, 0x200000)), hasHomework)
+
+  // memory
   val lpsram    = DefDevice(() => new APBPSRAM    (AddrSpace(0x80000000L, 0x400000)))
 
   val bootDev = List(lspi, luart0, lpsram)
@@ -82,18 +86,18 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
     lqspi, li2s,
     lrng, lcrc
   )
-  (bootDev ++ moreDev).map(_.map(_.node := apbxbar))
-  if (false) {
+  val homeworkDev = List(lmygpio, lmykbd, lmyvga)
+  (bootDev ++ moreDev ++ homeworkDev).map(_.map(_.node := apbxbar))
+
+  val yanker = AXI4UserYanker(Some(1)) := AXI4Fragmenter() := xbar
+  val yanker2 = if (hasHomework) {
     val xbar2 = AXI4Xbar()
-    apbxbar := APBDelayer() := AXI4ToAPB() := AXI4Buffer() := xbar2
     val lmrom = LazyModule(new AXI4MROM(AddrSpace(0x20000000, 0x1000)))
     val sramNode = AXI4RAM(AddrSpace(0x02020000, 0x2000).head, false, true, 4, None, Nil, false)
     List(lmrom.node, sramNode).map(_ := xbar2)
-    xbar2 := AXI4UserYanker(Some(1)) := AXI4Fragmenter() := xbar
-  } else {
-    apbxbar := APBDelayer() := AXI4ToAPB() := AXI4UserYanker(Some(1)) := AXI4Fragmenter() := xbar
-  }
-
+    xbar2 := yanker
+  } else yanker
+  apbxbar := APBDelayer() := AXI4ToAPB() := AXI4Buffer() := yanker2
   xbar := cpu.masterNode
 
   override lazy val module = new Impl
@@ -176,9 +180,9 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
     val qspi  = genAPB4DevIO("qspi", lqspi)
     val i2s   = genAPB4DevIO("i2s", li2s)
 
-    //val gpio  = genAPB4DevIO("gpio", lgpio)
-    //val ps2   = genAPB4DevIO("ps2", lkeyboard)
-    //val vga   = genAPB4DevIO("vga", lvga)
+    val mygpio = genAPB4DevIO("mygpio", lmygpio)
+    val mykbd  = genAPB4DevIO("mykbd", lmykbd)
+    val myvga  = genAPB4DevIO("myvga", lmyvga)
   }
 }
 
@@ -239,6 +243,10 @@ class ysyxSoCASIC(implicit p: Parameters) extends LazyModule {
     val i2s_sck    = genIOPAD("i2s_sck", msoc.i2s.flatMap(x => Some(x.sck_i, x.sck_o, x.sck_en_o)))
     val i2s_ws     = genIOPAD("i2s_ws",  msoc.i2s.flatMap(x => Some(x.ws_i,  x.ws_o,  x.ws_en_o )))
     val i2s_sd_i   = genPAD("i2s_sd_i", msoc.i2s.flatMap(x => Some(x.sd_i)))
+
+    val mygpio = genPAD("mygpio", msoc.mygpio)
+    val mykbd  = genPAD("mykbd", msoc.mykbd)
+    val myvga  = genPAD("myvga", msoc.myvga)
   }
 }
 
@@ -274,6 +282,10 @@ class ysyxSoCFull(implicit p: Parameters) extends LazyModule {
     masic.i2s_sck.map(_ <> DontCare)
     masic.i2s_ws.map(_ <> DontCare)
     masic.i2s_sd_i.map(_ <> DontCare)
+
+    masic.mygpio.map(_ <> DontCare)
+    masic.mykbd.map(_ <> DontCare)
+    masic.myvga.map(_ <> DontCare)
 
     val flash = Module(new flash)
     flash.io <> masic.spi.get
