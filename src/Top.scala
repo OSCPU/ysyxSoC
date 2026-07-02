@@ -19,18 +19,36 @@ object Config {
 
   def isCPUDataBits64 = false
 
+  def numDataPAD = 73
   def coreSelWidth = log2Up(numCore)
+
+  // for MPSoC
+  def isMPSoC: Boolean = false
+  def numInnerDataPAD = 64
+  def tileSelWidth = numDataPAD - numInnerDataPAD - 2 // 2 for clock and reset
+  def numTile: Int = scala.math.pow(2, tileSelWidth).toInt
 }
 
 class ElaborateTop extends Module {
   implicit val config: Parameters = new Config(new Edge32BitConfig ++ new DefaultRV32Config)
 
   val io = IO(new Bundle { })
-  val dut = LazyModule(new SimTop)
-  val mdut = Module(dut.module)
-  mdut.dontTouchPorts()
-  mdut.externalPins := DontCare
-  mdut.coreSel := DontCare
+  if (!Config.isMPSoC) {
+    val dut = LazyModule(new SimTop)
+    val mdut = Module(dut.module)
+    mdut.dontTouchPorts()
+    mdut.externalPins := DontCare
+    mdut.coreSel := DontCare
+  } else {
+    val dut = Module(new MPSoCasicTop)
+    dut.clock_pad_i := clock
+    dut.resetn_pad_i := ~reset.asBool
+    dut.dontTouchPorts()
+    dut.tileSel := DontCare
+    dut.dip := DontCare
+    dut.btn := DontCare
+    dut.customIn := DontCare
+  }
 }
 
 object Elaborate extends App {
