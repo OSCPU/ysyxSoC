@@ -57,21 +57,21 @@ class PSRAMBundle(nss: Int = 4) extends SPIBaseBundle(nss) {
   val dio = Vec(4, Analog(1.W))
 }
 
-class nmi_psram extends BlackBox {
+class nmi_psram(nss: Int = 4) extends BlackBox(Map("nss" -> nss)) {
   val io = IO(new Bundle {
     val clk_i:   Clock           = Input(Clock())
     val rst_n_i: Bool            = Input(Bool())
     val nmi:     NmiIO           = new NmiIO
-    val psram:   PSRAMCtrlBundle = new PSRAMCtrlBundle
+    val psram:   PSRAMCtrlBundle = new PSRAMCtrlBundle(nss)
   })
 }
 
-class PSRAMWrapper(address: BigInt) extends Module {
+class PSRAMWrapper(address: BigInt, nss: Int = 4) extends Module {
   val io           = IO(new Bundle {
     val in:   APBBundle       = Flipped(new APBBundle(APBBundleParameters(addrBits = 32, dataBits = 32)))
-    val qspi: PSRAMCtrlBundle = new PSRAMCtrlBundle
+    val qspi: PSRAMCtrlBundle = new PSRAMCtrlBundle(nss)
   })
-  val npsram: nmi_psram = Module(new nmi_psram)
+  val npsram: nmi_psram = Module(new nmi_psram(nss))
 
   val addrReg:  UInt = Reg(UInt(32.W))
   val wdataReg: UInt = Reg(UInt(32.W))
@@ -119,11 +119,12 @@ class PSRAMWrapper(address: BigInt) extends Module {
   io.qspi <> npsram.io.psram
 }
 
-class APBPSRAM(address: Seq[AddressSet])(implicit p: Parameters)
-  extends APB4DevTemplate(address, new PSRAMCtrlBundle)((in: APBBundle, outer: LazyModuleImp, irq_o: Bool, extra) => {
+class APBPSRAM(address: Seq[AddressSet], nss: Int = 4)(implicit p: Parameters)
+  extends APB4DevTemplate(address, new PSRAMCtrlBundle(nss))((in: APBBundle, outer: LazyModuleImp, irq_o: Bool, extra) => {
   // Check if the address set has only one element and get the base address
   require(address.length == 1, "APBPSRAM requires only one address set now")
-  val mpsram = Module(new PSRAMWrapper(address.head.base))
+  require(nss <= 4, "APBPSRAM supports no more than 4 PSRAM chips")
+  val mpsram = Module(new PSRAMWrapper(address.head.base, nss))
   mpsram.clock := outer.clock
   mpsram.reset := outer.reset
   mpsram.io.in <> in

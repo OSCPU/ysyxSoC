@@ -77,7 +77,7 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
   val lmyvga    = DefDevice(() => new APB4MyVGA   (AddrSpace(0x21000000, 0x200000)), hasHomework)
 
   // memory
-  val lpsram    = DefDevice(() => new APBPSRAM    (AddrSpace(0x80000000L, 0x400000)))
+  val lpsram    = DefDevice(() => new APBPSRAM    (AddrSpace(0x80000000L, 0x400000), nss = 3))
 
   val bootDev = List(lspi, luart0, lpsram)
   val moreDev = List(lclint, lplic,

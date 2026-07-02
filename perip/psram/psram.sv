@@ -53,7 +53,9 @@
 `define PSRAM_START    8'h40
 `define PSRAM_END      8'h47
 
-module nmi_psram (
+module nmi_psram #(
+  parameter nss = 4
+)(
     // verilog_format: off
     input logic  clk_i,
     input logic  rst_n_i,
@@ -64,7 +66,7 @@ module nmi_psram (
     output [31:0] nmi_rdata,
     output nmi_ready,
     output psram_sck_o,
-    output [3:0] psram_nss_o,
+    output [nss-1:0] psram_nss_o,
     output [3:0] psram_io_oe_o,
     input  [3:0] psram_io_di_i,
     output [3:0] psram_io_do_o,
@@ -108,10 +110,13 @@ module nmi_psram (
   wire nmi_valid_real = nmi_valid && s_init_done;
 
   // verilog_format: off
-  assign psram_nss_o[0]   = (~s_init_done) || (s_init_done && nmi_addr[24:23] == 2'd0) ? s_psram_ce : 1'b1;
-  assign psram_nss_o[1]   = (~s_init_done) || (s_init_done && nmi_addr[24:23] == 2'd1) ? s_psram_ce : 1'b1;
-  assign psram_nss_o[2]   = (~s_init_done) || (s_init_done && nmi_addr[24:23] == 2'd2) ? s_psram_ce : 1'b1;
-  assign psram_nss_o[3]   = (~s_init_done) || (s_init_done && nmi_addr[24:23] == 2'd3) ? s_psram_ce : 1'b1;
+  genvar i;
+  generate
+    for (i = 0; i < nss; i = i + 1) begin
+      assign psram_nss_o[i] = (~s_init_done) || (s_init_done && nmi_addr[24:23] == i[1:0]) ? s_psram_ce : 1'b1;
+    end
+  endgenerate
+
   assign psram_io_oe_o[0] = ~s_psram_sio_oen;
   assign psram_io_oe_o[1] = ~s_psram_sio_oen;
   assign psram_io_oe_o[2] = ~s_psram_sio_oen;
