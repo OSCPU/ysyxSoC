@@ -198,7 +198,7 @@ class RCUBundle extends Bundle {
   val ext_rst_n_i      = Input(Bool())
   val wdt_rst_n_i      = Input(Bool())
   val pll_en_i         = Input(Bool())
-  val clk_cfg_i        = Input(UInt(3.W))
+  val clk_cfg_i        = Input(UInt(2.W))
   val core_sel_i       = Input(UInt(5.W))
   val core_sel_o       = Output(UInt(5.W))
   val clk_o            = Output(UInt(7.W))

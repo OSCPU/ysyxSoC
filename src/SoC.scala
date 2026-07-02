@@ -113,14 +113,12 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
 
     lrcu.map { t =>
       val p = t.module.extra
-      p.ext_lfosc_clk_i := false.B
-      p.ext_hfosc_clk_i := false.B
-      p.ext_audosc_clk_i := false.B
-      p.ext_rst_n_i := false.B
-      p.wdt_rst_n_i := false.B
-      p.pll_en_i := false.B
-      p.clk_cfg_i := false.B
-      p.core_sel_i := false.B
+      p.ext_lfosc_clk_i := clock.asBool
+      p.ext_hfosc_clk_i := false.B   // unused
+      p.ext_audosc_clk_i := false.B  // unused
+      p.ext_rst_n_i := !reset.asBool
+      p.wdt_rst_n_i := lwdg.map(_.module.extra.rst_o).getOrElse(false.B)
+      p.core_sel_i := false.B        // unused
     }
 
     List(ltim0, ltim1, ltim2, ltim3).map(_.map(_.module.extra.exclk_i := clock.asBool))
@@ -162,6 +160,10 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
     val uart0 = genAPB4DevIO("uart0", luart0)
     val spi   = genAPB4DevIO("spi", lspi)
     val psram = genAPB4DevIO("psram", lpsram)
+
+    val pll_en_i  = genIO("pll_en_i",  () => lrcu.get.module.extra.pll_en_i, lrcu != None)
+    val clk_cfg_i = genIO("clk_cfg_i", () => lrcu.get.module.extra.clk_cfg_i, lrcu != None)
+    val clk_o     = genIO("clk_o",     () => lrcu.get.module.extra.clk_o(0), lrcu != None)
 
     val gpio0 = genAPB4DevIO("gpio0", lgpio0)
     //val gpio1 = genAPB4DevIO("gpio1", lgpio1)
@@ -216,6 +218,10 @@ class asicTop(implicit p: Parameters) extends LazyModule {
     GenPAD(reset, msoc.reset)
     val coreSel = genPAD("coreSel", msoc.coreSel)
 
+    val pll_en_i  = genPAD("pll_en_i", msoc.pll_en_i)
+    val clk_cfg_i = genPAD("clk_cfg_i", msoc.clk_cfg_i)
+    val clk_o     = genPAD("clk_o",     msoc.clk_o)
+
     val uart0 = genPAD("uart0", msoc.uart0)
     val spi   = genPAD("spi", msoc.spi)
 
@@ -266,6 +272,9 @@ class SimTop(implicit p: Parameters) extends LazyModule {
     // for core multiplexing
     val coreSel = IO(Input(UInt(Config.coreSelWidth.W)))
     masic.coreSel := coreSel
+
+    masic.pll_en_i.map(_ <> DontCare)
+    masic.clk_cfg_i.map(_ <> DontCare)
 
     //val gpio_led = Module(new gpio_led_model)
     //gpio_led.io.led_i := masic.gpio0.get
