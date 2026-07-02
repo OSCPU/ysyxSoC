@@ -65,7 +65,7 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
   val ltim3     = DefDevice(() => new APB4Timer   (AddrSpace(0x1010b000, 0x20)), !isMini)
 
   // multimedia
-  val lqspi     = DefDevice(() => new APB4QSPI    (AddrSpace(0x10200000, 0x20)), !isMini)
+  val lqspi     = DefDevice(() => new APB4QSPI    (AddrSpace(0x10200000, 0x20), nss = 2), !isMini)
   val li2s      = DefDevice(() => new APB4I2S     (AddrSpace(0x10201000, 0x20)), false)
 
   // application

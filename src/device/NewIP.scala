@@ -138,21 +138,21 @@ class RTCIO extends MyAPB4Bundle {
 class apb4_rtc extends BlackBoxWithAPB4(new RTCIO)
 class APB4RTC(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_rtc, new RTCBundle, true)
 
-class QSPIBundle extends Bundle {
+class QSPIBundle(nss: Int = 4) extends Bundle {
   val spi_sck_o = Output(Bool())
-  val spi_nss_o = Output(UInt(4.W))
+  val spi_nss_o = Output(UInt(nss.W))
   val spi_io_en_o = Output(UInt(4.W))
   val spi_io_in_i = Input(UInt(4.W))
   val spi_io_out_o = Output(UInt(4.W))
 }
-class QSPIIO extends MyAPB4Bundle {
-  val qspi = new QSPIBundle
+class QSPIIO(nss: Int = 4) extends MyAPB4Bundle {
+  val qspi = new QSPIBundle(nss)
   val qspi_irq_o = Output(Bool())
   override def connect_extra(extra: Data): Unit = extra.asInstanceOf[QSPIBundle] <> this.qspi
   override def connect_irq(irq_o: Bool): Unit = irq_o := qspi_irq_o
 }
-class apb4_spi extends BlackBoxWithAPB4(new QSPIIO)
-class APB4QSPI(address: Seq[AddressSet])(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_spi, new QSPIBundle, true)
+class apb4_spi extends BlackBoxWithAPB4(new QSPIIO(4))
+class APB4QSPI(address: Seq[AddressSet], nss: Int = 4)(implicit p: Parameters) extends APB4DevBlackBox(address, () => new apb4_spi, new QSPIBundle(nss), true)
 
 class TimerBundle extends Bundle {
   val exclk_i = Input(Bool())
