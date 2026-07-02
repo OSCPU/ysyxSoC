@@ -43,7 +43,8 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
   // generic system
   val luart0    = DefDevice(() => new APBUart16550(AddrSpace(0x10000000, 0x8)))
   val lspi      = DefDevice(() => new APBSPI      (AddrSpace(0x10001000, 0x20)   ++     // SPI controller
-                                                   AddrSpace(0x30000000, 0x10000000)))  // XIP flash
+                                                   AddrSpace(0x30000000, 0x10000000),   // XIP flash
+                                                   if (hasHomework) 8 else 1))
   val lrcu      = DefDevice(() => new APB4RCU     (AddrSpace(0x10002000, 0x1000)), !isMini)
   val lrtc      = DefDevice(() => new APB4RTC     (AddrSpace(0x10004000, 0x20)), !isMini)
   val lwdg      = DefDevice(() => new APB4WDG     (AddrSpace(0x10005000, 0x20)), !isMini)
@@ -281,10 +282,14 @@ class SimTop(implicit p: Parameters) extends LazyModule {
     val flash = Module(new flash)
     flash.io <> masic.spi.get
     flash.io.ss := masic.spi.get.ss(0)
-    val bitrev = Module(new bitrev)
-    bitrev.io <> masic.spi.get
-    bitrev.io.ss := masic.spi.get.ss(7)
-    masic.spi.get.miso := List(bitrev.io, flash.io).map(_.miso).reduce(_&&_)
+    if (Config.hasHomework) {
+      val bitrev = Module(new bitrev)
+      bitrev.io <> masic.spi.get
+      bitrev.io.ss := masic.spi.get.ss(7)
+      masic.spi.get.miso := List(bitrev.io, flash.io).map(_.miso).reduce(_&&_)
+    } else {
+      masic.spi.get.miso := flash.io.miso
+    }
 
     val espPsram = Module(new ESPWrapper)
     espPsram.io.sck_o := masic.psram_sck_o
