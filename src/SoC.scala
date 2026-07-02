@@ -51,7 +51,7 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
   val larchinfo = DefDevice(() => new APB4ArchInfo(AddrSpace(0x10006000, 0x10)), !isMini)
 
   // interface
-  val lgpio0    = DefDevice(() => new APB4GPIO    (AddrSpace(0x10100000, 0x40)), !isMini)
+  val lgpio0    = DefDevice(() => new APB4GPIO    (AddrSpace(0x10100000, 0x40), width = 4), !isMini)
   val lgpio1    = DefDevice(() => new APB4GPIO    (AddrSpace(0x10101000, 0x40)), false)
   val lgpio2    = DefDevice(() => new APB4GPIO    (AddrSpace(0x10102000, 0x40)), false)
   val luart1    = DefDevice(() => new APB4UART    (AddrSpace(0x10103000, 0x20)), !isMini)
@@ -127,7 +127,6 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
 
     List(lgpio0, lgpio1, lgpio2).map(_.map { x =>
       val p = x.module.extra
-      p.gpio_in_i := 0.U
       p.gpio_alt_0_out_i := 0.U
       p.gpio_alt_0_dir_i := 0.U
       p.gpio_alt_1_out_i := 0.U
@@ -164,7 +163,7 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
     val spi   = genAPB4DevIO("spi", lspi)
     val psram = genAPB4DevIO("psram", lpsram)
 
-    //val gpio0 = genAPB4DevIO("gpio0", lgpio0)
+    val gpio0 = genAPB4DevIO("gpio0", lgpio0)
     //val gpio1 = genAPB4DevIO("gpio1", lgpio1)
     //val gpio2 = genAPB4DevIO("gpio2", lgpio2)
     val uart1 = genAPB4DevIO("uart1", luart1)
@@ -225,6 +224,14 @@ class asicTop(implicit p: Parameters) extends LazyModule {
     val psram_nss_o = genPAD("psram_nss_o", psram.nss_o)
     val psram_dio   = genPAD("psram_dio", psram.io_di_i, psram.io_do_o, psram.io_oe_o)
 
+    val gpio0      = genIOPAD("gpio0", msoc.gpio0.flatMap(x => Some(x.gpio_in_i, x.gpio_out_o, x.gpio_dir_o)))
+    msoc.gpio0.map { x =>
+      x.gpio_alt_0_out_i := 0.U
+      x.gpio_alt_0_dir_i := 0.U
+      x.gpio_alt_1_out_i := 0.U
+      x.gpio_alt_1_dir_i := 0.U
+    }
+
     val uart1      = genPAD("uart1", msoc.uart1)
     val i2c_scl    = genIOPAD("i2c_scl", msoc.i2c.flatMap(x => Some(x.scl_i, x.scl_o, x.scl_dir_o)))
     val i2c_sda    = genIOPAD("i2c_sda", msoc.i2c.flatMap(x => Some(x.sda_i, x.sda_o, x.sda_dir_o)))
@@ -261,7 +268,8 @@ class SimTop(implicit p: Parameters) extends LazyModule {
     masic.coreSel := coreSel
 
     //val gpio_led = Module(new gpio_led_model)
-    //gpio_led.io.led_i := masic.gpio.get
+    //gpio_led.io.led_i := masic.gpio0.get
+    masic.gpio0.map(_ <> DontCare)
     masic.uart1.map(_ <> DontCare)
     masic.i2c_scl.map(_ <> DontCare)
     masic.i2c_sda.map(_ <> DontCare)
