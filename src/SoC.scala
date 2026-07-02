@@ -104,8 +104,6 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
   class Impl extends LazyModuleImp(this) with DontTouch {
     cpu.module.slave := DontCare
 
-    val clock_half = IO(Input(Bool())) // external slower clock
-    val intr = IO(Input(Bool()))
     cpu.module.interrupt := (if (isMini) false.B else lplic.get.module.irq_o)
 
     // for core multiplexing
@@ -124,7 +122,7 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
       p.core_sel_i := false.B
     }
 
-    List(ltim0, ltim1, ltim2, ltim3).map(_.map(_.module.extra.exclk_i := clock_half))
+    List(ltim0, ltim1, ltim2, ltim3).map(_.map(_.module.extra.exclk_i := clock.asBool))
 
     List(lgpio0, lgpio1, lgpio2).map(_.map { x =>
       val p = x.module.extra
@@ -137,15 +135,15 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
 
     lrtc.map { t =>
       val p = t.module.extra
-      p.rtc_clk_i := clock_half
+      p.rtc_clk_i := clock.asBool
       p.rtc_rst_n_i := !reset.asBool
     }
 
-    lwdg.map(_.module.extra.rtc_clk_i := clock_half)
+    lwdg.map(_.module.extra.rtc_clk_i := clock.asBool)
 
     // connect interrupt signal
     lplic.map(_.module.extra.irq_i := Cat(List(lgpio0, lgpio1, lgpio2, lrtc, li2c, lqspi, li2s,
-      lpwm0, lpwm1, ltim0, ltim1, ltim2, ltim3, lps2).filter(_ != None).map(_.get.module.irq_o)) ## intr)
+      lpwm0, lpwm1, ltim0, ltim1, ltim2, ltim3, lps2).filter(_ != None).map(_.get.module.irq_o)))
 
     // expose slave I/O interface as ports
     def _genIO[T <: Data](name: String, inner: T) = {
@@ -216,9 +214,7 @@ class asicTop(implicit p: Parameters) extends LazyModule {
 
     GenPAD(clock, msoc.clock)
     GenPAD(reset, msoc.reset)
-    val clock_half = genPAD("clock_half", msoc.clock_half)
     val coreSel = genPAD("coreSel", msoc.coreSel)
-    val intr = genPAD("intr", msoc.intr)
 
     val uart0 = genPAD("uart0", msoc.uart0)
     val spi   = genPAD("spi", msoc.spi)
@@ -258,12 +254,6 @@ class SimTop(implicit p: Parameters) extends LazyModule {
   override lazy val module = new Impl
   class Impl extends LazyModuleImp(this) with DontTouch {
     val masic = asic.module
-
-    // slower clock
-    val divReg = RegInit(false.B)
-    divReg := !divReg
-    masic.clock_half := divReg
-    masic.intr := false.B
 
     // for core multiplexing
     val coreSel = IO(Input(UInt(Config.coreSelWidth.W)))
