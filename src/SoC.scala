@@ -51,13 +51,13 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
 
   // interface
   val lgpio0    = DefDevice(() => new APB4GPIO    (AddrSpace(0x10100000, 0x40)), !isMini)
-  val lgpio1    = DefDevice(() => new APB4GPIO    (AddrSpace(0x10101000, 0x40)), !isMini)
-  val lgpio2    = DefDevice(() => new APB4GPIO    (AddrSpace(0x10102000, 0x40)), !isMini)
+  val lgpio1    = DefDevice(() => new APB4GPIO    (AddrSpace(0x10101000, 0x40)), false)
+  val lgpio2    = DefDevice(() => new APB4GPIO    (AddrSpace(0x10102000, 0x40)), false)
   val luart1    = DefDevice(() => new APB4UART    (AddrSpace(0x10103000, 0x20)), !isMini)
   val li2c      = DefDevice(() => new APB4I2C     (AddrSpace(0x10104000, 0x20)), !isMini)
-  val lps2      = DefDevice(() => new APB4PS2     (AddrSpace(0x10105000, 0x10)), !isMini)
+  val lps2      = DefDevice(() => new APB4PS2     (AddrSpace(0x10105000, 0x10)), false)
   val lpwm0     = DefDevice(() => new APB4PWM     (AddrSpace(0x10106000, 0x40)), !isMini)
-  val lpwm1     = DefDevice(() => new APB4PWM     (AddrSpace(0x10107000, 0x40)), !isMini)
+  val lpwm1     = DefDevice(() => new APB4PWM     (AddrSpace(0x10107000, 0x40)), false)
   val ltim0     = DefDevice(() => new APB4Timer   (AddrSpace(0x10108000, 0x20)), !isMini)
   val ltim1     = DefDevice(() => new APB4Timer   (AddrSpace(0x10109000, 0x20)), !isMini)
   val ltim2     = DefDevice(() => new APB4Timer   (AddrSpace(0x1010a000, 0x20)), !isMini)
@@ -65,7 +65,7 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
 
   // multimedia
   val lqspi     = DefDevice(() => new APB4QSPI    (AddrSpace(0x10200000, 0x20)), !isMini)
-  val li2s      = DefDevice(() => new APB4I2S     (AddrSpace(0x10201000, 0x20)), !isMini)
+  val li2s      = DefDevice(() => new APB4I2S     (AddrSpace(0x10201000, 0x20)), false)
 
   // application
   val lrng      = DefDevice(() => new APB4RNG     (AddrSpace(0x10300000, 0x10)), !isMini)
@@ -145,7 +145,7 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
 
     // connect interrupt signal
     lplic.map(_.module.extra.irq_i := Cat(List(lgpio0, lgpio1, lgpio2, lrtc, li2c, lqspi, li2s,
-      lpwm0, lpwm1, ltim0, ltim1, ltim2, ltim3, lps2).map(_.get.module.irq_o)) ## intr)
+      lpwm0, lpwm1, ltim0, ltim1, ltim2, ltim3, lps2).filter(_ != None).map(_.get.module.irq_o)) ## intr)
 
     // expose slave I/O interface as ports
     def _genIO[T <: Data](name: String, inner: T) = {
@@ -173,10 +173,11 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
     val ps2   = genAPB4DevIO("ps2", lps2)
     val pwm0  = genAPB4DevIO("pwm0", lpwm0)
     val pwm1  = genAPB4DevIO("pwm1", lpwm1)
-    val tim0_capch = genIO("tim0_capch", () => ltim0.get.module.extra.capch_i, ltim0 != None)
-    val tim1_capch = genIO("tim1_capch", () => ltim1.get.module.extra.capch_i, ltim1 != None)
-    val tim2_capch = genIO("tim2_capch", () => ltim2.get.module.extra.capch_i, ltim2 != None)
-    val tim3_capch = genIO("tim3_capch", () => ltim3.get.module.extra.capch_i, ltim3 != None)
+    val tim0_capch = genIO("tim0_capch", () => ltim0.get.module.extra.capch_i, false)
+    val tim1_capch = genIO("tim1_capch", () => ltim1.get.module.extra.capch_i, false)
+    val tim2_capch = genIO("tim2_capch", () => ltim2.get.module.extra.capch_i, false)
+    val tim3_capch = genIO("tim3_capch", () => ltim3.get.module.extra.capch_i, false)
+    List(ltim0, ltim1, ltim2, ltim3).map(_.map(_.module.extra.capch_i := false.B))
     val qspi  = genAPB4DevIO("qspi", lqspi)
     val i2s   = genAPB4DevIO("i2s", li2s)
 
