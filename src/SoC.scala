@@ -38,7 +38,7 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
 
   // RISC-V system
   val lclint    = DefDevice(() => new APB4CLINT   (AddrSpace(0x02010000, 0x10000)), !isMini)
-  val lplic     = DefDevice(() => new APB4PLIC    (AddrSpace(0x0c000000, 0x40)), !isMini)
+  val lplic     = DefDevice(() => new APB4PLIC    (AddrSpace(0x0c000000, 0x40)), Config.hasIntr)
 
   // generic system
   val luart0    = DefDevice(() => new APBUart16550(AddrSpace(0x10000000, 0x8)))
@@ -105,7 +105,7 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
   class Impl extends LazyModuleImp(this) with DontTouch {
     cpu.module.slave := DontCare
 
-    cpu.module.interrupt := (if (isMini) false.B else lplic.get.module.irq_o)
+    cpu.module.interrupt := lplic.map(_.module.irq_o).getOrElse(false.B)
 
     // for core multiplexing
     val coreSel = IO(Input(UInt(Config.coreSelWidth.W)))
