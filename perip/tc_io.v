@@ -20,6 +20,24 @@ module tc_io_xtl_pad (
 `endif
 endmodule
 
+module tc_io_xtl_pad_V (
+  input  xi_pad,
+  output xo_pad,
+  input  en,
+  output clk
+);
+  tc_io_xtl_pad inst(.xi_pad(xi_pad), .xo_pad(xo_pad), .en(en), .clk(clk));
+endmodule
+
+module tc_io_xtl_pad_H (
+  input  xi_pad,
+  output xo_pad,
+  input  en,
+  output clk
+);
+  tc_io_xtl_pad inst(.xi_pad(xi_pad), .xo_pad(xo_pad), .en(en), .clk(clk));
+endmodule
+
 module tc_io_in_pad (
   input  pad,
   output p2c
@@ -38,6 +56,20 @@ module tc_io_in_pad (
 `endif
 endmodule
 
+module tc_io_in_pad_V (
+  input  pad,
+  output p2c
+);
+  tc_io_in_pad inst(.pad(pad), .p2c(p2c));
+endmodule
+
+module tc_io_in_pad_H (
+  input  pad,
+  output p2c
+);
+  tc_io_in_pad inst(.pad(pad), .p2c(p2c));
+endmodule
+
 module tc_io_out_pad (
   output pad,
   input  c2p
@@ -54,6 +86,20 @@ module tc_io_out_pad (
 `else
   always $fatal(1, "No PDK is specified");
 `endif
+endmodule
+
+module tc_io_out_pad_V (
+  output pad,
+  input  c2p
+);
+  tc_io_out_pad inst(.pad(pad), .c2p(c2p));
+endmodule
+
+module tc_io_out_pad_H (
+  output pad,
+  input  c2p
+);
+  tc_io_out_pad inst(.pad(pad), .c2p(c2p));
 endmodule
 
 module tc_io_tri_pad (
@@ -84,6 +130,24 @@ module tc_io_tri_pad (
 `else
   always $fatal(1, "No PDK is specified");
 `endif
+endmodule
+
+module tc_io_tri_pad_V (
+  inout  pad,
+  input  c2p,
+  input  c2p_en,
+  output p2c
+);
+  tc_io_tri_pad inst(.pad(pad), .c2p(c2p), .c2p_en(c2p_en), .p2c(p2c));
+endmodule
+
+module tc_io_tri_pad_H (
+  inout  pad,
+  input  c2p,
+  input  c2p_en,
+  output p2c
+);
+  tc_io_tri_pad inst(.pad(pad), .c2p(c2p), .c2p_en(c2p_en), .p2c(p2c));
 endmodule
 
 module tc_io_tri_schmitt_pad (

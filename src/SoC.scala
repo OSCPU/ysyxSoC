@@ -222,44 +222,44 @@ class asicTop(implicit p: Parameters) extends LazyModule {
   class Impl extends LazyModuleImp(this) with DontTouch {
     val msoc = soc.module
 
-    def genPAD[T <: Data](name: String, inner: T): T = {
+    def genPAD[T <: Data](name: String, inner: T)(implicit dir: PadDirection): T = {
       val outer = IO(chiselTypeOf(inner))
       outer.suggestName(name)
       GenPAD(outer, inner)
       dontTouch(outer)
       outer
     }
-    def genPAD[T <: Data](name: String, inner: Option[T]): Option[T] = {
+    def genPAD[T <: Data](name: String, inner: Option[T])(implicit dir: PadDirection): Option[T] = {
       if (inner != None) Some(genPAD(name, inner.get)) else None
     }
-    def genPAD(name: String, p2c: UInt, c2p: UInt, c2pEn: UInt): Vec[Analog] = {
+    def genPAD(name: String, p2c: UInt, c2p: UInt, c2pEn: UInt)(implicit dir: PadDirection): Vec[Analog] = {
       val outer = IO(Vec(p2c.getWidth, Analog(1.W)))
       outer.suggestName(name)
       GenPAD(outer, p2c, c2p, c2pEn)
       dontTouch(outer)
       outer
     }
-    def genIOPAD(name: String, p2c_c2p_c2pEn: Option[(UInt, UInt, UInt)]): Option[Vec[Analog]] = {
+    def genIOPAD(name: String, p2c_c2p_c2pEn: Option[(UInt, UInt, UInt)])(implicit dir: PadDirection): Option[Vec[Analog]] = {
       p2c_c2p_c2pEn.flatMap(x => Some(genPAD(name, x._1, x._2, x._3)))
     }
 
-    GenPAD(clock, msoc.clock)
-    GenPAD(reset, msoc.reset)
-    val coreSel = genPAD("coreSel", msoc.coreSel)
+    GenPAD(clock, msoc.clock)(VPad())
+    GenPAD(reset, msoc.reset)(VPad())
+    val coreSel = genPAD("coreSel", msoc.coreSel)(HPad())
 
-    val pll_en_i  = genPAD("pll_en_i", msoc.pll_en_i)
-    val clk_cfg_i = genPAD("clk_cfg_i", msoc.clk_cfg_i)
-    val clk_o     = genPAD("clk_o",     msoc.clk_o)
+    val pll_en_i  = genPAD("pll_en_i", msoc.pll_en_i)(HPad())
+    val clk_cfg_i = genPAD("clk_cfg_i", msoc.clk_cfg_i)(HPad())
+    val clk_o     = genPAD("clk_o",     msoc.clk_o)(VPad())
 
-    val uart0 = genPAD("uart0", msoc.uart0)
-    val spi   = genPAD("spi", msoc.spi)
+    val uart0 = genPAD("uart0", msoc.uart0)(VPad())
+    val spi   = genPAD("spi", msoc.spi)(VPad())
 
     val psram = msoc.psram.get
-    val psram_sck_o = genPAD("psram_sck_o", psram.sck_o)
-    val psram_nss_o = genPAD("psram_nss_o", psram.nss_o)
-    val psram_dio   = genPAD("psram_dio", psram.io_di_i, psram.io_do_o, psram.io_oe_o)
+    val psram_sck_o = genPAD("psram_sck_o", psram.sck_o)(VPad())
+    val psram_nss_o = genPAD("psram_nss_o", psram.nss_o)(HPad())
+    val psram_dio   = genPAD("psram_dio", psram.io_di_i, psram.io_do_o, psram.io_oe_o)(HPad())
 
-    val gpio0      = genIOPAD("gpio0", msoc.gpio0.flatMap(x => Some(x.gpio_in_i, x.gpio_out_o, x.gpio_dir_o)))
+    val gpio0      = genIOPAD("gpio0", msoc.gpio0.flatMap(x => Some(x.gpio_in_i, x.gpio_out_o, x.gpio_dir_o)))(VPad())
     msoc.gpio0.map { x =>
       x.gpio_alt_0_out_i := 0.U
       x.gpio_alt_0_dir_i := 0.U
@@ -267,26 +267,26 @@ class asicTop(implicit p: Parameters) extends LazyModule {
       x.gpio_alt_1_dir_i := 0.U
     }
 
-    val uart1      = genPAD("uart1", msoc.uart1)
-    val i2c_scl    = genIOPAD("i2c_scl", msoc.i2c.flatMap(x => Some(x.scl_i, x.scl_o, x.scl_dir_o)))
-    val i2c_sda    = genIOPAD("i2c_sda", msoc.i2c.flatMap(x => Some(x.sda_i, x.sda_o, x.sda_dir_o)))
-    val ps2        = genPAD("ps2", msoc.ps2)
-    val pwm0       = genPAD("pwm0", msoc.pwm0)
-    val pwm1       = genPAD("pwm1", msoc.pwm1)
-    val tim0_capch = genPAD("tim0_capch", msoc.tim0_capch)
-    val tim1_capch = genPAD("tim1_capch", msoc.tim1_capch)
-    val tim2_capch = genPAD("tim2_capch", msoc.tim2_capch)
-    val tim3_capch = genPAD("tim3_capch", msoc.tim3_capch)
-    val qspi_sck_o = genPAD("qspi_sck_o", msoc.qspi.flatMap(x => Some(x.spi_sck_o)))
-    val qspi_nss_o = genPAD("qspi_nss_o", msoc.qspi.flatMap(x => Some(x.spi_nss_o)))
-    val qspi_dio   = genIOPAD("qspi_dio", msoc.qspi.flatMap(x => Some(x.spi_io_in_i, x.spi_io_out_o, x.spi_io_en_o)))
-    val i2s_sck    = genIOPAD("i2s_sck", msoc.i2s.flatMap(x => Some(x.sck_i, x.sck_o, x.sck_en_o)))
-    val i2s_ws     = genIOPAD("i2s_ws",  msoc.i2s.flatMap(x => Some(x.ws_i,  x.ws_o,  x.ws_en_o )))
-    val i2s_sd_i   = genPAD("i2s_sd_i", msoc.i2s.flatMap(x => Some(x.sd_i)))
+    val uart1      = genPAD("uart1", msoc.uart1)(HPad())
+    val i2c_scl    = genIOPAD("i2c_scl", msoc.i2c.flatMap(x => Some(x.scl_i, x.scl_o, x.scl_dir_o)))(VPad())
+    val i2c_sda    = genIOPAD("i2c_sda", msoc.i2c.flatMap(x => Some(x.sda_i, x.sda_o, x.sda_dir_o)))(VPad())
+    val ps2        = genPAD("ps2", msoc.ps2)(NPad())
+    val pwm0       = genPAD("pwm0", msoc.pwm0)(NPad())
+    val pwm1       = genPAD("pwm1", msoc.pwm1)(NPad())
+    val tim0_capch = genPAD("tim0_capch", msoc.tim0_capch)(NPad())
+    val tim1_capch = genPAD("tim1_capch", msoc.tim1_capch)(NPad())
+    val tim2_capch = genPAD("tim2_capch", msoc.tim2_capch)(NPad())
+    val tim3_capch = genPAD("tim3_capch", msoc.tim3_capch)(NPad())
+    val qspi_sck_o = genPAD("qspi_sck_o", msoc.qspi.flatMap(x => Some(x.spi_sck_o)))(VPad())
+    val qspi_nss_o = genPAD("qspi_nss_o", msoc.qspi.flatMap(x => Some(x.spi_nss_o)))(VPad())
+    val qspi_dio   = genIOPAD("qspi_dio", msoc.qspi.flatMap(x => Some(x.spi_io_in_i, x.spi_io_out_o, x.spi_io_en_o)))(VPad())
+    val i2s_sck    = genIOPAD("i2s_sck", msoc.i2s.flatMap(x => Some(x.sck_i, x.sck_o, x.sck_en_o)))(NPad())
+    val i2s_ws     = genIOPAD("i2s_ws",  msoc.i2s.flatMap(x => Some(x.ws_i,  x.ws_o,  x.ws_en_o )))(NPad())
+    val i2s_sd_i   = genPAD("i2s_sd_i", msoc.i2s.flatMap(x => Some(x.sd_i)))(NPad())
 
-    val mygpio = genPAD("mygpio", msoc.mygpio)
-    val mykbd  = genPAD("mykbd", msoc.mykbd)
-    val myvga  = genPAD("myvga", msoc.myvga)
+    val mygpio = genPAD("mygpio", msoc.mygpio)(NPad())
+    val mykbd  = genPAD("mykbd", msoc.mykbd)(NPad())
+    val myvga  = genPAD("myvga", msoc.myvga)(NPad())
   }
 }
 

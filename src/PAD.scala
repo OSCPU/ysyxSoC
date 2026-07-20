@@ -5,8 +5,22 @@ import chisel3.util._
 import chisel3.experimental.{Analog, attach}
 import chisel3.reflect.DataMirror // 导入关键的反射API
 
+abstract class PadDirection {
+  def getSuffix() = {
+    this match {
+      case VPad() => "_V"
+      case HPad() => "_H"
+      case _ => ""
+    }
+  }
+}
+case class VPad() extends PadDirection
+case class HPad() extends PadDirection
+case class NPad() extends PadDirection // Unspecified
+
 // for clock
-class tc_io_xtl_pad extends BlackBox {
+class tc_io_xtl_pad(implicit dir: PadDirection = NPad()) extends BlackBox {
+  override def desiredName = this.getClass.getSimpleName + dir.getSuffix
   val io = IO(new Bundle {
     val xi_pad = Input(Clock())
     val xo_pad = Output(Clock())
@@ -16,21 +30,24 @@ class tc_io_xtl_pad extends BlackBox {
 }
 
 // for data
-class tc_io_in_pad extends BlackBox {
+class tc_io_in_pad(implicit dir: PadDirection = NPad()) extends BlackBox {
+  override def desiredName = this.getClass.getSimpleName + dir.getSuffix
   val io = IO(new Bundle {
     val pad = Input(Bool())
     val p2c = Output(Bool())
   })
 }
 
-class tc_io_out_pad extends BlackBox {
+class tc_io_out_pad(implicit dir: PadDirection = NPad()) extends BlackBox {
+  override def desiredName = this.getClass.getSimpleName + dir.getSuffix
   val io = IO(new Bundle {
     val pad = Output(Bool())
     val c2p = Input(Bool())
   })
 }
 
-class tc_io_tri_pad extends BlackBox {
+class tc_io_tri_pad(implicit dir: PadDirection = NPad()) extends BlackBox {
+  override def desiredName = this.getClass.getSimpleName + dir.getSuffix
   val io = IO(new Bundle {
     val pad = Analog(1.W)
     val c2p = Input(Bool())  // chip to pad
@@ -40,31 +57,31 @@ class tc_io_tri_pad extends BlackBox {
 }
 
 object GenPAD {
-  def input(port: Bool) = {
+  def input(port: Bool)(implicit dir: PadDirection = NPad()) = {
     val pad = Module(new tc_io_in_pad)
     pad.io.pad := port
     pad.io.p2c
   }
-  def output(internal: Bool) = {
+  def output(internal: Bool)(implicit dir: PadDirection = NPad()) = {
     val pad = Module(new tc_io_out_pad)
     pad.io.c2p := internal
     pad.io.pad
   }
-  def inout(p2c: Bool, c2p: Bool, c2pEn: Bool) = {
+  def inout(p2c: Bool, c2p: Bool, c2pEn: Bool)(implicit dir: PadDirection = NPad()) = {
     val pad = Module(new tc_io_tri_pad)
     pad.io.c2p_en := c2pEn
     pad.io.c2p := c2p
     p2c := pad.io.p2c
     pad.io.pad
   }
-  def clock(clkIn: Clock) = {
+  def clock(clkIn: Clock)(implicit dir: PadDirection) = {
     val pad = Module(new tc_io_xtl_pad)
     pad.io.en := true.B
     pad.io.xi_pad := clkIn
     //pad.io.xo_pad // don't care now
     pad.io.clk
   }
-  def apply[T <: Data](port: T, internal: T): Unit = {
+  def apply[T <: Data](port: T, internal: T)(implicit dir: PadDirection): Unit = {
     (port, internal) match {
       case (p: Bool, i: Bool) =>
         DataMirror.specifiedDirectionOf(p) match {
@@ -88,7 +105,7 @@ object GenPAD {
         (p zip i).map { case (p0, i0) => apply(p0, i0) }
     }
   }
-  def apply(port: Vec[Analog], p2c: UInt, c2p: UInt, c2pEn: UInt): Unit = {
+  def apply(port: Vec[Analog], p2c: UInt, c2p: UInt, c2pEn: UInt)(implicit dir: PadDirection): Unit = {
     require(p2c.getWidth == c2p.getWidth)
     require(p2c.getWidth == c2pEn.getWidth)
     val list = (0 until p2c.getWidth).map(i => {
