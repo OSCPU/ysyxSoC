@@ -108,8 +108,8 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
     cpu.module.interrupt := lplic.map(_.module.irq_o).getOrElse(false.B)
 
     // for core multiplexing
-    val coreSel = IO(Input(UInt(Config.coreSelWidth.W)))
-    cpu.module.io_coreSel := coreSel
+    val coreSel = if (Config.numCore > 1) Some(IO(Input(UInt(Config.coreSelWidth.W)))) else None
+    cpu.module.io_coreSel := coreSel.getOrElse(0.U)
 
     lrcu.map { t =>
       val p = t.module.extra
@@ -271,7 +271,7 @@ class SimTop(implicit p: Parameters) extends LazyModule {
 
     // for core multiplexing
     val coreSel = IO(Input(UInt(Config.coreSelWidth.W)))
-    masic.coreSel := coreSel
+    masic.coreSel.map(_ <> coreSel)
 
     masic.pll_en_i.map(_ <> DontCare)
     masic.clk_cfg_i.map(_ <> DontCare)
