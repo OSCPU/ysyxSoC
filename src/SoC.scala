@@ -12,6 +12,8 @@ import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.amba.apb._
 import freechips.rocketchip.system.SimAXIMem
 
+import scala.collection.mutable.Map
+
 object AXI4SlaveNodeGenerator {
   def apply(params: Option[MasterPortParams], address: Seq[AddressSet])(implicit valName: ValName) =
     AXI4SlaveNode(params.map(p => AXI4SlavePortParameters(
@@ -22,6 +24,29 @@ object AXI4SlaveNodeGenerator {
           supportsRead  = TransferSizes(1, p.maxXferBytes))),
         beatBytes = p.beatBytes
       )).toSeq)
+}
+
+object CHeader {
+  val map: Map[String, AddressSet] = Map()
+  def init() = { map.clear() }
+  def add(name: String, range: AddressSet, idx: Int = 0): Unit = {
+    val realName = name + (if (idx == 0) "" else f"_${idx}")
+    if (map.get(realName) == None) { map += (realName -> range) }
+    else { add(name, range, idx + 1) }
+  }
+  def write() = {
+    val codeBase = map.toSeq.sortBy(_._2).map(m => {
+      val name = m._1 + "_BASE"
+      f"#define ${name}%-20s 0x${m._2.base}%08x\n"
+    }).reduce(_ + _)
+    val codeLen = map.toSeq.sortBy(_._2).map(m => {  // assume that AddresssSet is aligned
+      val name = m._1 + "_LEN"
+      f"#define ${name}%-20s 0x${m._2.mask + 1}%x\n"
+    }).reduce(_ + _)
+
+    val code = "#ifndef __MMIO_H__\n#define __MMIO_H__\n\n" + codeBase + "\n" + codeLen + "\n#endif"
+    java.nio.file.Files.write(java.nio.file.Paths.get("build/mmio.h"), code.getBytes)
+  }
 }
 
 class ysyxSoC(implicit p: Parameters) extends LazyModule {
@@ -35,6 +60,8 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
   def DefDevice[T <: LazyModule](dev: () => T, cond: Boolean = true) = {
     if (cond) Some(LazyModule(dev())) else None
   }
+
+  CHeader.init()
 
   // RISC-V system
   val lclint    = DefDevice(() => new APB4CLINT   (AddrSpace(0x02010000, 0x10000)), !isMini)
@@ -79,6 +106,8 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
 
   // memory
   val lpsram    = DefDevice(() => new APBPSRAM    (AddrSpace(0x80000000L, 0x400000), nss = 3))
+
+  CHeader.write()
 
   val bootDev = List(lspi, luart0, lpsram)
   val moreDev = List(lclint, lplic,

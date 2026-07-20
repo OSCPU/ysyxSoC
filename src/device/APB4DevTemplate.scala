@@ -21,6 +21,8 @@ object APBSlaveNodeGenerator {
 class APB4DevTemplate[T <: Data](address: Seq[AddressSet], extraIO: T = null, hasIRQout: Boolean = false)
   (body: (APBBundle, LazyModuleImp, Bool, T) => Unit)(implicit p: Parameters) extends LazyModule {
   val node = APBSlaveNodeGenerator(address)
+  CHeader.add(this.getClass.getSimpleName, address(0))
+
   lazy val module = new Impl
   class Impl extends LazyModuleImp(this) {
     val (in, _) = node.in(0)
