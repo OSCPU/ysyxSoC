@@ -14,6 +14,8 @@ object Config {
   def hasIntr: Boolean = false
   def hasHomework: Boolean = false
 
+  def isCPUDataBits64 = false
+
   def coreSelWidth = log2Up(numCore)
 }
 

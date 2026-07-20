@@ -11,7 +11,8 @@ import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.util._
 
 object CPUAXI4BundleParameters {
-  def apply() = AXI4BundleParameters(addrBits = 32, dataBits = 32, idBits = Config.idBits)
+  def dataBits = if (Config.isCPUDataBits64) 64 else 32
+  def apply() = AXI4BundleParameters(addrBits = 32, dataBits = dataBits, idBits = Config.idBits)
 }
 
 class CPUBundle extends Bundle {
@@ -75,7 +76,7 @@ class CPU(idBits: Int)(implicit p: Parameters) extends LazyModule {
       forceName(cpu, s"core${i}")
       cpu.io.clock := clock
       cpu.io.reset := reset
-      in <> (if (Config.isMini) {
+      val master = if (Config.isMini) {
         val bridge = Module(new MemBridge)
         forceName(bridge, s"bridge${i}")
         bridge.io.ifu <> cpu.io.io.ifu.get
@@ -86,7 +87,14 @@ class CPU(idBits: Int)(implicit p: Parameters) extends LazyModule {
         cpu.io.io.interrupt.get := cmp.io.interrupt_out(i)
         cpu.io.io.slave.get <> slave  // FIXME: this should also use CoreMultiplexer
         cpu.io.io.master.get
-      })
+      }
+      if (Config.isCPUDataBits64) {
+        val bridge2 = Module(new AXI64to32)
+        bridge2.io.in <> master
+        in <> bridge2.io.out
+      } else {
+        in <> master
+      }
     }
   }
 }
