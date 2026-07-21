@@ -108,6 +108,7 @@ module nmi_psram #(
   logic        s_mem_valid_re;
 
   wire nmi_valid_real = nmi_valid && s_init_done;
+  logic nmi_valid_real_delay;
 
   // verilog_format: off
   genvar i;
@@ -163,12 +164,14 @@ module nmi_psram #(
     end
   end
 
-  edge_det_sync_re #(1) u_mem_valid_edge_det_sync_re (
-      clk_i,
-      rst_n_i,
-      nmi_valid_real,
-      s_mem_valid_re
-  );
+  always_ff @(posedge clk_i, negedge rst_n_i) begin
+    if (~rst_n_i) begin
+      nmi_valid_real_delay <= '0;
+    end else begin
+      nmi_valid_real_delay <= nmi_valid_real;
+    end
+  end
+  assign s_mem_valid_re = (~nmi_valid_real_delay) & nmi_valid_real;
 
   always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (~rst_n_i) begin
