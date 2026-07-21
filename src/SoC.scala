@@ -192,7 +192,7 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
 
     val pll_en_i  = genIO("pll_en_i",  () => lrcu.get.module.extra.pll_en_i, lrcu != None)
     val clk_cfg_i = genIO("clk_cfg_i", () => lrcu.get.module.extra.clk_cfg_i, lrcu != None)
-    val clk_o     = genIO("clk_o",     () => lrcu.get.module.extra.clk_o(0), lrcu != None)
+    val clk_soc_o = genIO("clk_soc_o", () => lrcu.get.module.extra.clk_o(0), lrcu != None)
 
     val gpio0 = genAPB4DevIO("gpio0", lgpio0)
     //val gpio1 = genAPB4DevIO("gpio1", lgpio1)
@@ -256,7 +256,7 @@ class asicTop(implicit p: Parameters) extends LazyModule {
 
     val pll_en_i  = genPAD("pll_en_i", msoc.pll_en_i)(HPad())
     val clk_cfg_i = genPAD("clk_cfg_i", msoc.clk_cfg_i)(HPad())
-    val clk_o     = genPAD("clk_o",     msoc.clk_o)(VPad())
+    val clk_soc_o = genPAD("clk_soc_o", msoc.clk_soc_o)(VPad())
 
     val uart0 = genPAD("uart0", msoc.uart0)(VPad())
     val spi   = genPAD("spi", msoc.spi)(VPad())
