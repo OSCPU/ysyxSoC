@@ -55,7 +55,6 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
   val cpu = LazyModule(new CPU(idBits = Config.idBits))
 
   val isMini = Config.isMini
-  val hasHomework = Config.hasHomework
   def AddrSpace(base: BigInt, len: BigInt = 0x1000) = AddressSet.misaligned(base, len)
   def DefDevice[T <: LazyModule](dev: () => T, cond: Boolean = true) = {
     if (cond) Some(LazyModule(dev())) else None
@@ -71,7 +70,7 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
   val luart0    = DefDevice(() => new APBUart16550(AddrSpace(0x10000000, 0x8)))
   val lspi      = DefDevice(() => new APBSPI      (AddrSpace(0x10001000, 0x20)   ++     // SPI controller
                                                    AddrSpace(0x30000000, 0x10000000),   // XIP flash
-                                                   if (hasHomework) 8 else 1))
+                                                   if (Config.hasMoreHomework) 8 else 1))
   val lrcu      = DefDevice(() => new APB4RCU     (AddrSpace(0x10002000, 0x1000)), !isMini)
   val lrtc      = DefDevice(() => new APB4RTC     (AddrSpace(0x10004000, 0x20)), !isMini)
   val lwdg      = DefDevice(() => new APB4WDG     (AddrSpace(0x10005000, 0x20)), !isMini)
@@ -100,9 +99,9 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
   val lcrc      = DefDevice(() => new APB4CRC     (AddrSpace(0x10301000, 0x20)), !isMini)
 
   // homework
-  val lmygpio   = DefDevice(() => new APB4MyGPIO  (AddrSpace(0x20001000, 0x10)), hasHomework)
-  val lmykbd    = DefDevice(() => new APB4MyKbd   (AddrSpace(0x20002000, 0x8)), hasHomework)
-  val lmyvga    = DefDevice(() => new APB4MyVGA   (AddrSpace(0x21000000, 0x200000)), hasHomework)
+  val lmygpio   = DefDevice(() => new APB4MyGPIO  (AddrSpace(0x20001000, 0x10)), Config.hasHomework)
+  val lmykbd    = DefDevice(() => new APB4MyKbd   (AddrSpace(0x20002000, 0x8)), Config.hasMoreHomework)
+  val lmyvga    = DefDevice(() => new APB4MyVGA   (AddrSpace(0x21000000, 0x200000)), Config.hasMoreHomework)
 
   // memory
   val lpsram    = DefDevice(() => new APBPSRAM    (AddrSpace(0x80000000L, 0x400000), nss = 3))
@@ -120,7 +119,7 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
   (bootDev ++ moreDev ++ homeworkDev).map(_.map(_.node := apbxbar))
 
   val yanker = AXI4UserYanker(Some(1)) := AXI4Fragmenter() := xbar
-  val yanker2 = if (hasHomework) {
+  val yanker2 = if (Config.hasMoreHomework) {
     val xbar2 = AXI4Xbar()
     val lmrom = LazyModule(new AXI4MROM(AddrSpace(0x20000000, 0x1000)))
     val sramNode = AXI4RAM(AddrSpace(0x02020000, 0x2000).head, false, true, 4, None, Nil, false)
@@ -319,7 +318,6 @@ class SimTop(implicit p: Parameters) extends LazyModule {
     //val gpio_led = Module(new gpio_led_model)
     //gpio_led.io.led_i := masic.gpio0.get
     masic.gpio0.map(_ <> DontCare)
-    masic.uart1.map(_ <> DontCare)
     masic.i2c_scl.map(_ <> DontCare)
     masic.i2c_sda.map(_ <> DontCare)
     masic.ps2.map(_ <> DontCare)
@@ -332,14 +330,10 @@ class SimTop(implicit p: Parameters) extends LazyModule {
     masic.i2s_ws.map(_ <> DontCare)
     masic.i2s_sd_i.map(_ <> DontCare)
 
-    masic.mygpio.map(_ <> DontCare)
-    masic.mykbd.map(_ <> DontCare)
-    masic.myvga.map(_ <> DontCare)
-
     val flash = Module(new flash)
     flash.io <> masic.spi.get
     flash.io.ss := masic.spi.get.ss(0)
-    if (Config.hasHomework) {
+    if (Config.hasMoreHomework) {
       val bitrev = Module(new bitrev)
       bitrev.io <> masic.spi.get
       bitrev.io.ss := masic.spi.get.ss(7)
@@ -354,16 +348,16 @@ class SimTop(implicit p: Parameters) extends LazyModule {
     espPsram.io.dio <> masic.psram_dio
 
     val externalPins = IO(new Bundle{
-      //val gpio = chiselTypeOf(masic.gpio)
-      //val ps2 = chiselTypeOf(masic.ps2)
-      //val vga = chiselTypeOf(masic.vga)
-      val uart0 = chiselTypeOf(masic.uart0.get)
-      //val uart1 = chiselTypeOf(masic.uart1)
+      val mygpio = masic.mygpio.flatMap(x => Some(chiselTypeOf(x)))
+      val mykbd = masic.mykbd.flatMap(x => Some(chiselTypeOf(x)))
+      val myvga = masic.myvga.flatMap(x => Some(chiselTypeOf(x)))
+      val uart0 = masic.uart0.flatMap(x => Some(chiselTypeOf(x)))
+      val uart1 = masic.uart1.flatMap(x => Some(chiselTypeOf(x)))
     })
-    //externalPins.gpio <> masic.gpio
-    //externalPins.ps2 <> masic.ps2
-    //externalPins.vga <> masic.vga
-    externalPins.uart0 <> masic.uart0.get
-    //externalPins.uart1 <> masic.uart1
+    externalPins.mygpio.map(_ <> masic.mygpio.get)
+    externalPins.mykbd.map(_ <> masic.mykbd.get)
+    externalPins.myvga.map(_ <> masic.myvga.get)
+    externalPins.uart0.map(_ <> masic.uart0.get)
+    externalPins.uart1.map(_ <> masic.uart1.get)
   }
 }

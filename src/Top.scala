@@ -9,10 +9,11 @@ import freechips.rocketchip.diplomacy.LazyModule
 
 object Config {
   def idBits: Int = 4
-  def isMini: Boolean = false
+  def isMini: Boolean = true
   def numCore: Int = 1
   def hasIntr: Boolean = false
-  def hasHomework: Boolean = false
+  def hasHomework: Boolean = true
+  def hasMoreHomework: Boolean = false
 
   def isCPUDataBits64 = false
 
