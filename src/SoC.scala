@@ -243,8 +243,11 @@ class asicTop(implicit p: Parameters) extends LazyModule {
       p2c_c2p_c2pEn.flatMap(x => Some(genPAD(name, x._1, x._2, x._3)))
     }
 
-    GenPAD(clock, msoc.clock)(VPad())
+    val clock_pad_i = IO(Input(Clock()))
+    val clock_pad_o = IO(Output(Clock()))
+    GenPAD(clock_pad_i, msoc.clock, clock_pad_o)(VPad())
     GenPAD(reset, msoc.reset)(VPad())
+
     val coreSel = genPAD("coreSel", msoc.coreSel)(HPad())
 
     val pll_en_i  = genPAD("pll_en_i", msoc.pll_en_i)(HPad())
@@ -297,6 +300,9 @@ class SimTop(implicit p: Parameters) extends LazyModule {
   override lazy val module = new Impl
   class Impl extends LazyModuleImp(this) with DontTouch {
     val masic = asic.module
+
+    masic.clock_pad_i := clock
+    dontTouch(masic.clock_pad_o)
 
     // for core multiplexing
     val coreSel = IO(Input(UInt(Config.coreSelWidth.W)))

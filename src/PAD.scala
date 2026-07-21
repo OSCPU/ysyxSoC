@@ -74,12 +74,12 @@ object GenPAD {
     p2c := pad.io.p2c
     pad.io.pad
   }
-  def clock(clkIn: Clock)(implicit dir: PadDirection) = {
+  def apply(clkPadIn: Clock, clk: Clock, clkPadOut: Clock)(implicit dir: PadDirection): Unit = {
     val pad = Module(new tc_io_xtl_pad)
     pad.io.en := true.B
-    pad.io.xi_pad := clkIn
-    //pad.io.xo_pad // don't care now
-    pad.io.clk
+    pad.io.xi_pad := clkPadIn
+    clkPadOut := pad.io.xo_pad
+    clk := pad.io.clk
   }
   def apply[T <: Data](port: T, internal: T)(implicit dir: PadDirection): Unit = {
     (port, internal) match {
@@ -97,7 +97,6 @@ object GenPAD {
           case _ => require(false, "unsupport direction")
         }
       case (p: Reset, i: Reset) => i := input(p.asBool)
-      case (p: Clock, i: Clock) => i := clock(p)
       case (p: Analog, i: Analog) => require(false)
       case (p: Record, i: Record) =>
         (p.elements zip i.elements).map { case (p0, i0) => apply(p0._2, i0._2) }
