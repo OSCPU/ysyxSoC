@@ -246,7 +246,11 @@ class asicTop(implicit p: Parameters) extends LazyModule {
     val clock_pad_i = IO(Input(Clock()))
     val clock_pad_o = IO(Output(Clock()))
     GenPAD(clock_pad_i, msoc.clock, clock_pad_o)(VPad())
-    GenPAD(reset, msoc.reset)(VPad())
+
+    val resetn_pad_i = IO(Input(Bool()))
+    val resetn = Wire(Bool())
+    GenPAD(resetn_pad_i, resetn)(VPad())
+    msoc.reset := ~resetn
 
     val coreSel = genPAD("coreSel", msoc.coreSel)(HPad())
 
@@ -303,6 +307,7 @@ class SimTop(implicit p: Parameters) extends LazyModule {
 
     masic.clock_pad_i := clock
     dontTouch(masic.clock_pad_o)
+    masic.resetn_pad_i := ~reset.asBool
 
     // for core multiplexing
     val coreSel = IO(Input(UInt(Config.coreSelWidth.W)))
