@@ -9,7 +9,8 @@ import freechips.rocketchip.diplomacy.LazyModule
 
 object Config {
   def idBits: Int = 4
-  def isMini: Boolean = true
+  def isMini: Boolean = true     // mini SoC for learning
+  def isSimpleBus: Boolean = false
   def numCore: Int = 1
   def hasIntr: Boolean = false
   def hasHomework: Boolean = true

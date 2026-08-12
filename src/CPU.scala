@@ -16,11 +16,11 @@ object CPUAXI4BundleParameters {
 }
 
 class CPUBundle extends Bundle {
-  val interrupt = if (!Config.isMini) Some(Input(Bool())) else None
-  val master = if (!Config.isMini) Some(AXI4Bundle(CPUAXI4BundleParameters())) else None
-  val slave = if (!Config.isMini) Some(Flipped(AXI4Bundle(CPUAXI4BundleParameters()))) else None
-  val ifu = if (Config.isMini) Some(new IMEM) else None
-  val lsu = if (Config.isMini) Some(new DMEM) else None
+  val interrupt = if (!Config.isSimpleBus) Some(Input(Bool())) else None
+  val master = if (!Config.isSimpleBus) Some(AXI4Bundle(CPUAXI4BundleParameters())) else None
+  val slave = if (!Config.isSimpleBus) Some(Flipped(AXI4Bundle(CPUAXI4BundleParameters()))) else None
+  val ifu = if (Config.isSimpleBus) Some(new IMEM) else None
+  val lsu = if (Config.isSimpleBus) Some(new DMEM) else None
 }
 
 class ysyx_00000000 extends BlackBox {
@@ -76,7 +76,7 @@ class CPU(idBits: Int)(implicit p: Parameters) extends LazyModule {
       forceName(cpu, s"core${i}")
       cpu.io.clock := clock
       cpu.io.reset := reset
-      val master = if (Config.isMini) {
+      val master = if (Config.isSimpleBus) {
         val bridge = Module(new MemBridge)
         forceName(bridge, s"bridge${i}")
         bridge.io.ifu <> cpu.io.io.ifu.get
