@@ -92,7 +92,7 @@ class MemBridge extends Module { // only adapt to multi-cycle CPU
   out.aw.bits := out.ar.bits
   out.aw.bits.addr := io.lsu.addr
   out.aw.bits.size := io.lsu.size
-  out. w.valid := ((stateD === DMEMState.idle) && isValidStore) || (stateD === DMEMState.waitWready)
+  out. w.valid := ((stateD === DMEMState.idle) && isValidStore) || stateD.isOneOf(DMEMState.waitAWready, DMEMState.waitWready)
   out. w.bits.data := io.lsu.wdata
   out. w.bits.strb := io.lsu.wmask
   out. w.bits.last := true.B
