@@ -13,6 +13,7 @@ object Config {
   def isSimpleBus: Boolean = false
   def numCore: Int = 1
   def hasIntr: Boolean = false
+  def hasPLL: Boolean = false
   def hasHomework: Boolean = true
   def hasMoreHomework: Boolean = false
 

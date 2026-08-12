@@ -71,7 +71,7 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
   val lspi      = DefDevice(() => new APBSPI      (AddrSpace(0x10001000, 0x20)   ++     // SPI controller
                                                    AddrSpace(0x30000000, 0x10000000),   // XIP flash
                                                    if (Config.hasMoreHomework) 8 else 1))
-  val lrcu      = DefDevice(() => new APB4RCU     (AddrSpace(0x10002000, 0x1000)), !isMini)
+  val lrcu      = DefDevice(() => new APB4RCU     (AddrSpace(0x10002000, 0x1000)), Config.hasPLL)
   val lrtc      = DefDevice(() => new APB4RTC     (AddrSpace(0x10004000, 0x20)), !isMini)
   val lwdg      = DefDevice(() => new APB4WDG     (AddrSpace(0x10005000, 0x20)), !isMini)
   val larchinfo = DefDevice(() => new APB4ArchInfo(AddrSpace(0x10006000, 0x10)), !isMini)
