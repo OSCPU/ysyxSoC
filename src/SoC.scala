@@ -26,6 +26,14 @@ object AXI4SlaveNodeGenerator {
       )).toSeq)
 }
 
+object AsyncResetSynchronizer {
+  def apply(clock: Clock, reset: Reset): Reset = {  // Synchronize `reset` to the `clock` domain
+    withClockAndReset (clock, reset.asAsyncReset) {
+      ~RegNext(RegNext(true.B, init = false.B), init = false.B)
+    }
+  }
+}
+
 object CHeader {
   val map: Map[String, AddressSet] = Map()
   def init() = { map.clear() }
@@ -249,7 +257,7 @@ class asicTop(implicit p: Parameters) extends LazyModule {
     val resetn_pad_i = IO(Input(Bool()))
     val resetn = Wire(Bool())
     GenPAD(resetn_pad_i, resetn)(VPad())
-    msoc.reset := ~resetn
+    msoc.reset := AsyncResetSynchronizer(msoc.clock, ~resetn)
 
     val coreSel = genPAD("coreSel", msoc.coreSel)(HPad())
 
