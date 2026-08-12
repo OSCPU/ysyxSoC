@@ -126,17 +126,17 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
   val homeworkDev = List(lmygpio, lmykbd, lmyvga)
   (bootDev ++ moreDev ++ homeworkDev).map(_.map(_.node := apbxbar))
 
-  val yanker = if (Config.isSimpleBus) xbar else {
-    AXI4UserYanker(Some(1)) := AXI4Fragmenter() := xbar
+  val tmpNode = if (Config.isSimpleBus) xbar else {
+    val tmpNode2 = if (Config.hasMoreHomework) {
+      val xbar2 = AXI4Xbar()
+      val lmrom = LazyModule(new AXI4MROM(AddrSpace(0x20000000, 0x1000)))
+      val sramNode = AXI4RAM(AddrSpace(0x02020000, 0x2000).head, false, true, 4, None, Nil, false)
+      List(lmrom.node, sramNode).map(_ := xbar2)
+      xbar2
+    } else AXI4Buffer()
+    tmpNode2 := AXI4UserYanker(Some(1)) := AXI4Fragmenter() := xbar
   }
-  val yanker2 = if (Config.hasMoreHomework) {
-    val xbar2 = AXI4Xbar()
-    val lmrom = LazyModule(new AXI4MROM(AddrSpace(0x20000000, 0x1000)))
-    val sramNode = AXI4RAM(AddrSpace(0x02020000, 0x2000).head, false, true, 4, None, Nil, false)
-    List(lmrom.node, sramNode).map(_ := xbar2)
-    xbar2 := yanker
-  } else yanker
-  apbxbar := APBDelayer() := AXI4ToAPB() := AXI4Buffer() := yanker2
+  apbxbar := APBDelayer() := AXI4ToAPB() := tmpNode
   xbar := cpu.masterNode
 
   override lazy val module = new Impl
