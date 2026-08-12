@@ -8,22 +8,25 @@ import freechips.rocketchip.system._
 import freechips.rocketchip.diplomacy.LazyModule
 
 object Config {
-  def idBits: Int = 4
-  def isMini: Boolean = true     // mini SoC for learning
-  def isSimpleBus: Boolean = false
-  def numCore: Int = 1
-  def hasIntr: Boolean = false
-  def hasPLL: Boolean = false
+  def ysyxStage = 'C'
   def hasHomework: Boolean = true
-  def hasMoreHomework: Boolean = false
 
-  def isCPUDataBits64 = false
+  require(ysyxStage >= 'A' && ysyxStage <= 'F')
+  def isMPSoC: Boolean = (ysyxStage == 'F')
+  def isMini: Boolean = (ysyxStage >= 'D') && hasHomework  // mini SoC for learning
+  def isSimpleBus: Boolean = (ysyxStage >= 'D')
+  def hasPLL: Boolean = (ysyxStage <= 'C')
+  def hasMoreHomework: Boolean = (ysyxStage <= 'C') && hasHomework
+  def hasIntr: Boolean = (ysyxStage == 'A')
+
+  def numCore: Int = 1         // for SoC templates
+  def isCPUDataBits64 = false  // not for ysyx
+  def idBits: Int = 4
 
   def numDataPAD = 73
   def coreSelWidth = log2Up(numCore)
 
   // for MPSoC
-  def isMPSoC: Boolean = false
   def numInnerDataPAD = 64
   def tileSelWidth = numDataPAD - numInnerDataPAD - 2 // 2 for clock and reset
   def numTile: Int = scala.math.pow(2, tileSelWidth).toInt
