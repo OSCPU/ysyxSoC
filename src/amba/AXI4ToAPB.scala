@@ -46,13 +46,14 @@ class AXI4ToAPB(val aFlow: Boolean = true)(implicit p: Parameters) extends LazyM
     (node.in zip node.out) foreach { case ((in, edgeIn), (out, edgeOut)) =>
       val (ar, r, aw, w, b) = (in.ar, in.r, in.aw, in.w, in.b)
 
-      val s_idle :: s_inflight :: s_wait_rready_bready :: Nil = Enum(3)
+      val s_idle :: s_buf :: s_inflight :: s_wait_rready_bready :: Nil = Enum(4)
       val state = RegInit(s_idle)
       val accept_read = (state === s_idle) && ar.valid
       val accept_write = !accept_read && (state === s_idle) && aw.valid && w.valid
-      val is_write = accept_write holdUnless (state === s_idle)
+      val is_write = RegEnable(accept_write, state === s_idle)
       switch (state) {
-        is (s_idle)     { state := Mux(ar.valid || (aw.valid && w.valid), s_inflight, s_idle) }
+        is (s_idle)     { state := Mux(ar.valid || (aw.valid && w.valid), s_buf, s_idle) }
+        is (s_buf)      { state := s_inflight }
         is (s_inflight) { state := Mux(out.pready, Mux(r.fire || b.fire, s_idle, s_wait_rready_bready), s_inflight) }
         is (s_wait_rready_bready) { state := Mux(r.fire || b.fire, s_idle, s_wait_rready_bready) }
       }
@@ -66,12 +67,12 @@ class AXI4ToAPB(val aFlow: Boolean = true)(implicit p: Parameters) extends LazyM
 
       val rid_reg    = RegEnable(ar.bits.id, accept_read)
       val bid_reg    = RegEnable(aw.bits.id, accept_write)
-      val araddr_reg = ar.bits.addr holdUnless accept_read
-      val awaddr_reg = aw.bits.addr holdUnless accept_write
-      val wdata_reg  =  w.bits.data holdUnless accept_write
-      val wstrb_reg  =  w.bits.strb holdUnless accept_write
+      val araddr_reg = RegEnable(ar.bits.addr, accept_read)
+      val awaddr_reg = RegEnable(aw.bits.addr, accept_write)
+      val wdata_reg  = RegEnable( w.bits.data, accept_write)
+      val wstrb_reg  = RegEnable( w.bits.strb, accept_write)
 
-      out.psel    := (accept_read || accept_write) || out.penable
+      out.psel    := (state === s_buf) || out.penable
       out.penable := state === s_inflight
       out.pwrite  := is_write
       out.paddr   := Mux(is_write, awaddr_reg, araddr_reg)
