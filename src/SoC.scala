@@ -126,7 +126,9 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
   val homeworkDev = List(lmygpio, lmykbd, lmyvga)
   (bootDev ++ moreDev ++ homeworkDev).map(_.map(_.node := apbxbar))
 
-  val yanker = AXI4UserYanker(Some(1)) := AXI4Fragmenter() := xbar
+  val yanker = if (Config.isSimpleBus) xbar else {
+    AXI4UserYanker(Some(1)) := AXI4Fragmenter() := xbar
+  }
   val yanker2 = if (Config.hasMoreHomework) {
     val xbar2 = AXI4Xbar()
     val lmrom = LazyModule(new AXI4MROM(AddrSpace(0x20000000, 0x1000)))
