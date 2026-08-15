@@ -136,8 +136,7 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
     } else AXI4Buffer()
     tmpNode2 := AXI4UserYanker(Some(1)) := AXI4Fragmenter() := xbar
   }
-  val apbDelayer = if (Config.hasHomework) APBDelayer() else APBIdentityNode()
-  apbxbar := apbDelayer := AXI4ToAPB() := tmpNode
+  apbxbar := AXI4ToAPB() := tmpNode
   val cdc = if (Config.hasCDC) Some(LazyModule(new AXI4RationalCrossing(FastToSlow))) else None
   val cdcNode = if (cdc != None) cdc.get.node else AXI4IdentityNode()
   xbar := cdcNode := cpu.masterNode
