@@ -144,6 +144,10 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
 
   override lazy val module = new Impl
   class Impl extends LazyModuleImp(this) with DontTouch {
+    val cpuClock = IO(Input(Clock()))
+    cpu.module.clock := cpuClock
+    cpu.module.reset := AsyncResetSynchronizer(cpuClock, reset)
+
     cpu.module.slave := DontCare
 
     cpu.module.interrupt := lplic.map(_.module.irq_o).getOrElse(false.B)
@@ -266,6 +270,8 @@ class asicTop(implicit p: Parameters) extends LazyModule {
     val clock_pad_i = IO(Input(Clock()))
     val clock_pad_o = IO(Output(Clock()))
     GenPAD(clock_pad_i, msoc.clock, clock_pad_o)(VPad())
+    val cpuClock = IO(Input(Clock()))
+    msoc.cpuClock := cpuClock
 
     val resetn_pad_i = IO(Input(Bool()))
     val resetn = Wire(Bool())
@@ -327,6 +333,8 @@ class SimTop(implicit p: Parameters) extends LazyModule {
 
     masic.clock_pad_i := clock
     dontTouch(masic.clock_pad_o)
+    val cpuClock = IO(Input(Clock()))
+    masic.cpuClock := cpuClock
     masic.resetn_pad_i := ~reset.asBool
 
     // for core multiplexing

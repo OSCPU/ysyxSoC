@@ -42,6 +42,7 @@ class ElaborateTop extends Module {
     val mdut = Module(dut.module)
     mdut.dontTouchPorts()
     mdut.externalPins := DontCare
+    mdut.cpuClock := DontCare
     mdut.coreSel := DontCare
   } else {
     val dut = Module(new MPSoCasicTop)
