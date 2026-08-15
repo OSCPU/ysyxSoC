@@ -138,13 +138,23 @@ class ysyxSoC(implicit p: Parameters) extends LazyModule {
   }
   val apbDelayer = if (Config.hasHomework) APBDelayer() else APBIdentityNode()
   apbxbar := apbDelayer := AXI4ToAPB() := tmpNode
-  xbar := cpu.masterNode
+  val cdc = if (Config.hasCDC) Some(LazyModule(new AXI4RationalCrossing(FastToSlow))) else None
+  val cdcNode = if (cdc != None) cdc.get.node else AXI4IdentityNode()
+  xbar := cdcNode := cpu.masterNode
 
   override lazy val module = new Impl
   class Impl extends LazyModuleImp(this) with DontTouch {
     cpu.module.slave := DontCare
 
     cpu.module.interrupt := lplic.map(_.module.irq_o).getOrElse(false.B)
+
+    cdc.map { c =>
+      val cdcIO = c.module.io
+      cdcIO.in_clock := cpu.module.clock
+      cdcIO.in_reset := cpu.module.reset
+      cdcIO.out_clock := clock
+      cdcIO.out_reset := reset
+    }
 
     // for core multiplexing
     val coreSel = if (Config.numCore > 1) Some(IO(Input(UInt(Config.coreSelWidth.W)))) else None

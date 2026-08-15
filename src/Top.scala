@@ -18,6 +18,7 @@ object Config {
   def hasPLL: Boolean = (ysyxStage <= 'C')
   def hasMoreHomework: Boolean = (ysyxStage <= 'C') && hasHomework
   def hasIntr: Boolean = (ysyxStage == 'A')
+  def hasCDC: Boolean = (ysyxStage <= 'C') || hasHomework
 
   def numCore: Int = 1         // for SoC templates
   def isCPUDataBits64 = false  // not for ysyx
