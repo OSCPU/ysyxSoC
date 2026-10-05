@@ -482,7 +482,7 @@ module CPU(
     .io_in_0_rvalid      (_cmp_io_in_0_rvalid),
     .io_in_0_rdata  (_cmp_io_in_0_rdata)
   );
-  NPC core0 (
+  ysyx_00000000 core0 (
     .clock            (clock),
     .reset            (reset),
     .io_ifu_addr      (_cpu_io_ifu_addr),
